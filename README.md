@@ -67,7 +67,8 @@ Expósito-Alonso et al. 2022 · Mastretta-Yanes et al. 2024 pilot.
 Page code (`index.html`, the page part of `dashboard.html`) and the build scripts kept in the
 working group's project folder: MIT (see `LICENSE`). Data tables under `data/`, the data embedded
 in `dashboard.html` and the text of `methods_panel.md`: CC BY-NC 4.0 (see `DATA_LICENSE.md`); the
-non-commercial condition follows the terms of the IUCN Red List, Living Planet Index and WDPA inputs.
+non-commercial condition follows the terms of the IUCN Red List, Living Planet Index and WDPA inputs,
+and rows derived from the Living Planet Database stay under the Living Planet Index data terms.
 The repository contains derived summaries only: no range polygons, no protected-area polygons
 and no population time series are redistributed; the sources above must be credited when
 values are reused.
