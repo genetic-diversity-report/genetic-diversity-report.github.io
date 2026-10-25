@@ -180,6 +180,7 @@ textarea.tsv{width:100%;min-height:120px;font-family:var(--mono);font-size:11.5p
       <div class="sel"><label for="find" class="sr">Country</label><input type="text" id="find" list="countries" placeholder="Armenia" autocomplete="off"><datalist id="countries"></datalist></div>
       <div class="stat"><span class="k" id="world-k"></span><span class="big num" id="world-val">—</span><span class="v" id="world-int"></span></div>
       <div class="stat"><span class="k">Coverage</span><span class="v" id="world-cov"></span></div>
+      <div class="stat"><span class="k">Before 1850</span><span class="v" id="world-pre1850"></span></div>
       <div class="stat"><span class="k">Reading the map</span><span class="v">Do not order countries by these values: species coverage, priors and range data differ by country. Each value is shown with its n and its confidence.</span></div>
       <div class="btnrow"><button class="btn" id="open-country">Open country page →</button><button class="prov" id="world-prov">⧉ rows</button></div>
     </aside>
@@ -363,6 +364,9 @@ const CORE=(()=>{
   function luh2Text(f,years){return (years||Object.keys(f).sort()).filter(y=>f[y]!=null).map(y=>`${y} ${pctPlain(f[y])}`).join(" · ")}
   function luh2Line(f){return f?`Primary land in LUH2: ${luh2Text(f)} of the country's land`:""}
   function isRemnant(f){return !!f&&f["1850"]!=null&&f["1850"]<0.05}
+  /* conversion before the baseline (05 §9, 2026-10-25): more than half of the 1700 primary land gone by 1850 */
+  function isPre1850(f){return !!f&&f["1700"]!=null&&f["1850"]!=null&&f["1700"]>0&&f["1850"]<0.5*f["1700"]}
+  function pre1850Text(f){return `Primary land fell from ${pctPlain(f["1700"])} (1700) to ${pctPlain(f["1850"])} (1850) of the country's land before the baseline: that earlier loss is not counted.`}
   const RESIDUE="LUH2 holds less than 1 km² of primary land here in 2015: the 1850 remnant is fully converted and the exact value depends on numerical residue. Read it as the loss of essentially all primary land since 1850, and see the natural-habitat bound beside it.";
   const WDPA_GAP="The public WDPA holds few of this country's protected-area polygons; no protection value is shown (design 05 §9).";
   /* primary land (km², bundle_manifest.luh2_primary_km2) below 1 km² in the last LUH2 year */
@@ -374,7 +378,7 @@ const CORE=(()=>{
   function runSuffix(runId){const m=/-(r\d+)$/.exec(String(runId||""));return m?m[1]:""}
   function countriesWord(n){return n===5?"five":fmtN(n)}
   function runScopeSentence(s,num){const n=num||(x=>x);return `every plant, mammal, amphibian and reptile species with a range map that reaches the ${countriesWord((s.countries||[]).length)} countries (${n(fmtN(s.n_species_range_in_countries??s.n_species_in_countries))} species, ${n(fmtN(s.n_species_country_pairs_range))} species × country pairs; birds absent; no range map, no estimate); LUH2 ends ${s.luh2_last_year}; provisional — quote with the run id.`}
-  return {NB,MINUS,decodeTable,match,one,pct,pctPlain,pctLoss,fmtN,fmtNum,metricName,fmtVal,interval,intervalLoss,tight,nOfN,nOfNShort,nSentence,ownZ,confRider,floorMsg,headlineStat,headlineSentence,provRule,provId,yearsFor,subst,speciesFormula,zBand,shardMatch,speciesShard,decodeSpeciesShard,speciesProvKeys,runSuffix,runScopeSentence,seriesValue,decodeSeries,covers,NOT_BUNDLED,countriesWord,NO_AREA,NO_PRIMARY,NATURAL_SHOWN,REMNANT,RESIDUE,WDPA_GAP,luh2Text,luh2Line,isRemnant,isResidue};
+  return {NB,MINUS,decodeTable,match,one,pct,pctPlain,pctLoss,fmtN,fmtNum,metricName,fmtVal,interval,intervalLoss,tight,nOfN,nOfNShort,nSentence,ownZ,confRider,floorMsg,headlineStat,headlineSentence,provRule,provId,yearsFor,subst,speciesFormula,zBand,shardMatch,speciesShard,decodeSpeciesShard,speciesProvKeys,runSuffix,runScopeSentence,seriesValue,decodeSeries,covers,NOT_BUNDLED,countriesWord,NO_AREA,NO_PRIMARY,NATURAL_SHOWN,REMNANT,RESIDUE,WDPA_GAP,luh2Text,luh2Line,isRemnant,isResidue,isPre1850,pre1850Text};
 })();
 /* @@core-end */
 
@@ -470,6 +474,7 @@ function habSwitch(iso){if(st.autoHab&&st.autoHab!==iso){st.hab="primary";st.aut
   if(st.sel===iso&&location.hash.startsWith("#country")&&location.hash!==viewLink("country"))history.replaceState(null,"",viewLink("country"))}
 function fitLabel(t,px){const mx=Math.max(6,Math.floor(px/6.6));return t.length>mx?t.slice(0,mx-1)+"…":t}
 function xLabels(ys,x,gap){const out=[];let lastX=-1e9;ys.forEach((v,i)=>{const px=x(v);if(i===ys.length-1){if(out.length&&px-x(out[out.length-1])<gap)out.pop();out.push(v)}else if(px-lastX>=gap){out.push(v);lastX=px}});return out}
+function pre1850Global(){const a=(D.manifest||{}).luh2_primary_km2||{};const s={};RUN.forEach(i=>{const r=a[i];if(!r)return;["1700","1850","2015"].forEach(y=>{if(r[y]!=null)s[y]=(s[y]||0)+r[y]})});if(!s["1700"]||s["1850"]==null||s["2015"]==null||s["1700"]<=s["2015"])return "";const g1850=1-s["1850"]/s["1700"],g2015=1-s["2015"]/s["1700"],after=(s["1850"]-s["2015"])/(s["1700"]-s["2015"]);return `Losses before 1850 are not counted. Many regions had begun losing earlier: in LUH2, ${pctPlain(g1850)} of the primary land present in 1700 had been converted by 1850 and ${pctPlain(g2015)} by 2015 across the ${fmtN(RUN.length)} countries and territories of this run, so ${pctPlain(after)} of the recorded conversion came after 1850.`}
 function luh2Of(iso){return ((D.manifest||{}).luh2_primary_frac||{})[iso]||null}
 /* both flags qualify the primary-habitat estimate: shown with a primary row of a country that has one at the default keys */
 function remnantFlag(iso){return st.hab==="primary"&&hasAreaEstimate(iso)&&CORE.isRemnant(luh2Of(iso))}
@@ -595,6 +600,7 @@ function renderWorldStat(){const row=lensRow("WLD",st.year);
   const none=Math.max(0,nRun-shown-(natOnly||0));
   const covTail=`${shown} of ${nRun} ${isR1()?"first-run ":""}countries have an estimate at these settings${low?` (${low} hatched: low confidence)`:""}`+(natOnly!=null?` · ${natOnly} shown only under the natural-habitat definition on their country pages · ${none} without an area estimate`:` · ${none} without a value at these settings`)+(offRun?` · ${offRun} territories drawn on the map are outside this run.`:".");
   $("world-cov").textContent=`${nOfN(row).replace("species known from the country",pn!=null?`species known from the ${CORE.countriesWord(pn)} countries; species × country pairs`:"species known from the pooled countries; species × country pairs")}; confidence ${row.confidence}. ${covTail}`;
+  $("world-pre1850").textContent=pre1850Global();
   $("world-prov").onclick=()=>openDrawer({kind:"summary",row,iso:"WLD"},$("world-prov"))}
 
 /* ---------- render: country ---------- */
@@ -602,7 +608,7 @@ async function renderCountry(){const iso=st.sel;const c=byIso.get(iso);const nam
   $("c-meta").innerHTML=`<span><b>${esc(name.toUpperCase())}</b></span>${c?`<span>${esc(c.subregion_un||c.region_un||"")}</span><span>land <span class="num">${fmtN(c.land_km2)}</span> km²</span>`:""}<span>ISO <span class="num">${esc(iso)}</span></span>`;
   $("c-base-lab").textContent=st.base;
   habSwitch(iso);
-  $("c-habnote").hidden=true;$("c-habnote").textContent="";$("c-remnant").hidden=true;$("c-remnant").textContent="";$("c-residue").hidden=true;$("c-residue").textContent="";$("c-luh2").textContent=CORE.luh2Line(luh2Of(iso));
+  $("c-habnote").hidden=true;$("c-habnote").textContent="";$("c-remnant").hidden=true;$("c-remnant").textContent="";$("c-residue").hidden=true;$("c-residue").textContent="";$("c-luh2").textContent=CORE.luh2Line(luh2Of(iso));{const lf=luh2Of(iso);if(CORE.isPre1850(lf))$("c-luh2").innerHTML=esc(CORE.luh2Line(lf))+' <span class="hbadge">conversion before 1850</span> '+esc(CORE.pre1850Text(lf))}
   if(!RUN.includes(iso)){$("c-h1").textContent=`${name}: no estimate in this run`;$("c-lede").innerHTML=`${isR1()?"The first run":"The run"} covers ${RUN.length<=5?D.manifest.scope.countries.map(x=>esc(x.name)).join(", "):`${fmtN(RUN.length)} countries`}. No species rows were computed for ${esc(name)}; the page keeps its place and will fill when a later run${isR1()?" (r2 widens the species set)":""} includes it. Nothing here is a placeholder value.`;$("c-panels").hidden=true;return}
   $("c-panels").hidden=false;$("c-h1").textContent=`${name} — loading rows…`;$("c-lede").textContent="";
   let spErr=null;
