@@ -1,10 +1,10 @@
 # Genetic diversity loss by country
 
-The report page of the *Scientists Warning on Genetic Diversity Loss* working group:
-a model-based estimate, for every country, of how much genetic diversity the mapped
+A report by Moisés Expósito-Alonso (University of California Berkeley; Innovative Genomics
+Institute; Howard Hughes Medical Institute): a model-based estimate, for every country, of how much genetic diversity the mapped
 plants, mammals, amphibians and reptiles have lost since 1850 as their primary habitat
 was converted. Live page: <https://genetic-diversity-report.github.io/>
-(part of <https://genetic-diversity-scientists-warning.github.io/>).
+(an independent research product; not a CBD document).
 
 Every value is a model-based estimate. It is modelled from global datasets, not national data, and has not been validated by any Party.
 It is not the headline indicator A.4 and is not a substitute for it; it is intended to be
@@ -41,8 +41,8 @@ covers exponent uncertainty and species sampling only.
 | `data/country_protection_area.json` | protected-area shares per country and biome, from the public WDPA and WD-OECM |
 | `dashboard.html` | a single-file offline copy of the page with the same data (38 MB) |
 
-Numbers are produced by the pipeline in the working group's private project folder
-(`cop17-2026/`); this repository holds the built page and its data only. Each run is one
+Numbers are produced by the author's pipeline (`cop17-2026/`, to be published separately); this
+repository holds the built page and its data only. Each run is one
 commit, so earlier runs stay in the history. An archived copy of the full result tables
 with a DOI is planned.
 
