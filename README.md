@@ -40,6 +40,8 @@ covers exponent uncertainty and species sampling only.
 | `data/country_summary/<ISO3>/`, `data/species/<ISO3>/` | full tables, including per-species rows, for Armenia, Spain, Brazil, Kenya, the United States and the pooled unit |
 | `data/country_protection_area.json` | protected-area shares per country and biome, from the public WDPA and WD-OECM |
 | `dashboard.html` | a single-file offline copy of the page with the same data (38 MB) |
+| `data/redlist/<ISO3>.json` | the Red List breakdown of each country's time series (categories with at least 5 species; listed in `bundle_manifest.json` under `redlist_files`) |
+| `assets/` | figure files of the letter (CC BY-NC 4.0 with the data, see `DATA_LICENSE.md`) |
 
 Numbers are produced by the author's pipeline (`cop17-2026/`, to be published separately); this
 repository holds the built page and its data only. Each run is one
@@ -62,10 +64,14 @@ Borgelt et al. 2022 plant ranges · Living Planet Index 2024 (derived summaries 
 diversity–area exponents from Schmidt et al. 2026, Mualim et al. 2026, RepAdapt and
 Expósito-Alonso et al. 2022 · Mastretta-Yanes et al. 2024 pilot.
 
+Protected areas: UNEP-WCMC and IUCN (2026). Protected Planet: The World Database on Protected Areas (WDPA) and World Database on Other Effective Area-based Conservation Measures (WD-OECM), September 2026. Cambridge, UK: UNEP-WCMC and IUCN. www.protectedplanet.net — <https://www.protectedplanet.net>.
+Red List: IUCN (2025). The IUCN Red List of Threatened Species. Version 2025-2.
+<https://www.iucnredlist.org>; spatial data, 2022 release.
+
 ## Terms
 
 Page code (`index.html`, the page part of `dashboard.html`) and the build scripts kept in the
-working group's project folder: MIT (see `LICENSE`). Data tables under `data/`, the data embedded
+author's project folder: MIT (see `LICENSE`). Data tables under `data/`, the data embedded
 in `dashboard.html` and the text of `methods_panel.md`: CC BY-NC 4.0 (see `DATA_LICENSE.md`); the
 non-commercial condition follows the terms of the IUCN Red List, Living Planet Index and WDPA inputs,
 and rows derived from the Living Planet Database stay under the Living Planet Index data terms.
