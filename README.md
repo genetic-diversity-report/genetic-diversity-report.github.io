@@ -19,7 +19,7 @@ differ by country, so a value is read with its species count and confidence, nev
 |---|---|
 | run id | 20261024-r3 |
 | methods version | 0.1.2 |
-| built (UTC) | 2026-10-24 |
+| built (UTC) | 2026-10-26 |
 | countries in scope | 210 (every country with LUH2 land) |
 | species | 49,287 plants, mammals, amphibians and reptiles with a range map reaching the 210 countries; 48,064 enter the run's loss table, in 186,218 species × country pairs (the bundle carries the default-key subsets of that table) |
 | estimates at the default keys | 169 countries on primary habitat, 27 more under the natural-habitat definition, 14 without an area estimate |

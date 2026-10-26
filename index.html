@@ -134,13 +134,15 @@ table.sp tr.exp td{background:var(--paper);border-bottom:1px solid var(--line)}
 textarea.tsv{width:100%;min-height:120px;font-family:var(--mono);font-size:11.5px;color:var(--ink);background:var(--paper);border:1px solid var(--line);border-radius:4px;padding:8px}
 .brand small a.home-link{color:inherit;text-decoration:underline;text-decoration-style:dotted;text-underline-offset:2px}
 .brand small a.home-link:hover{text-decoration-style:solid}
+.sc-lab{font-size:12px;font-weight:500;fill:var(--ink);font-family:var(--sans);paint-order:stroke;stroke:var(--card);stroke-width:3px;stroke-linejoin:round}
+.sc-pt{cursor:pointer}
 </style>
 
 <div class="banner" id="banner" role="note"><div class="wrap">Loading the run manifest…</div></div>
 
 <div class="wrap">
 <header class="top">
-  <div class="brand">Genetic Diversity Country Report<small><a class="home-link" href="https://genetic-diversity-scientists-warning.github.io/" title="Scientists Warning on Genetic Diversity Loss: home">Scientists Warning on Genetic Diversity Loss</a> · complementary, model-based indicator</small></div>
+  <div class="brand">Genetic Diversity Country Report<small>Complementary, model-based indicator</small></div>
   <nav class="tabs" aria-label="Views">
     <a href="#home" data-view="home">World map</a>
     <a href="#country" data-view="country">Country</a>
@@ -164,7 +166,7 @@ textarea.tsv{width:100%;min-height:120px;font-family:var(--mono);font-size:11.5p
 <!-- HOME -->
 <section class="view" id="view-home">
   <div class="eyebrow">Country report · genetic diversity · complementary, model-based indicator</div>
-  <h1 id="home-h1">How much genetic diversity has each country lost since 1850?</h1>
+  <h1 id="home-h1">How much genetic diversity has each country lost globally?</h1>
   <p class="lede" id="home-lede">Estimated from habitat loss (LUH2) and the genetic-diversity–area relationship of species with range data. A model-based estimate relevant to the genetic-diversity clause of GBF Goal A and to Target 4. <a href="#methods">How we got this</a>.</p>
   <div class="grid">
     <div class="card map-wrap">
@@ -208,6 +210,13 @@ textarea.tsv{width:100%;min-height:120px;font-family:var(--mono);font-size:11.5p
     <div id="ts"></div>
     <p class="caption" id="ts-cap"></p>
   </div>
+  <div class="card">
+    <h2>1b · The same series by IUCN Red List category</h2>
+    <p class="sub">Selected metric and baseline; line = median (q50) of the species in each category. Category = the species' current Red List assessment (2025-2).</p>
+    <div id="rl"></div>
+    <div id="rl-tab"></div>
+    <p class="caption" id="rl-cap"></p>
+  </div>
   <div class="panel-grid">
     <div class="card"><h2>2a · Where the loss is, by biome</h2><p class="sub">Dot = median (q50); line = q05–q95; grey bar behind = share of the country's land.</p><div id="biomes"></div><p class="caption" id="biomes-cap">RESOLVE 2017 biomes, labelled “GET-equivalent approximation”. Strata under 5 species show no number.</p></div>
     <div class="card"><h2>2b · By taxon group</h2><p class="sub">Same encoding. ▨ = confidence low.</p><div id="taxa"></div><p class="caption" id="taxa-cap">Taxon-specific exponents are not used: the prior is one distribution per metric and marker domain.</p></div>
@@ -238,6 +247,7 @@ textarea.tsv{width:100%;min-height:120px;font-family:var(--mono);font-size:11.5p
   <p class="caption" id="addc-msg" style="margin:0 0 10px"></p>
   <div class="card"><h2 id="cmp-title"></h2><p class="sub">Direct labels at line end; bands hidden when more than three countries are shown.</p><div id="cmp"></div><p class="caption">Countries without rows in this run appear greyed in the table, not on the chart.</p></div>
   <div class="card" style="margin-top:18px"><div class="tscroll"><table class="sp" id="cmptable"></table></div></div>
+  <div class="card" style="margin-top:18px"><h2>All countries at these settings</h2><p class="sub">One point per country or territory with an estimate at the selected settings, against its LUH2 primary-land loss over the same years; loss is drawn downward (0 % at the top). Countries in the compare set are outlined and named; click a point to add a country (up to five).</p><div id="cmp-scatter"></div><div class="legend" id="cmp-sc-legend"></div><p class="caption" id="cmp-sc-cap"></p></div>
 </section>
 
 <!-- EXPORT -->
@@ -362,7 +372,8 @@ const CORE=(()=>{
   const REMNANT=`Primary land was already below 5${NB}% of the country in 1850 (LUH2): this estimate tracks the fate of a small remnant and does not count conversion before 1850; read it with the natural-habitat bound beside it.`;
   /* LUH2 primary-land fractions (bundle_manifest.luh2_primary_frac: {year: fraction of the country's land}) as "1700 x % · 1850 y % · 2015 z %" */
   function luh2Text(f,years){return (years||Object.keys(f).sort()).filter(y=>f[y]!=null).map(y=>`${y} ${pctPlain(f[y])}`).join(" · ")}
-  function luh2Line(f){return f?`Primary land in LUH2: ${luh2Text(f)} of the country's land`:""}
+  /* the country page's line reads the first LUH2 year, 1850 and the last one (the manifest carries every LUH2 year since 2026-10-26) */
+  function luh2Line(f){if(!f)return "";const ys=Object.keys(f).filter(y=>f[y]!=null).sort();return `Primary land in LUH2: ${luh2Text(f,[...new Set([ys[0],"1850",ys[ys.length-1]])])} of the country's land`}
   function isRemnant(f){return !!f&&f["1850"]!=null&&f["1850"]<0.05}
   /* conversion before the baseline (05 §9, 2026-10-25): more than half of the 1700 primary land gone by 1850 */
   function isPre1850(f){return !!f&&f["1700"]!=null&&f["1850"]!=null&&f["1700"]>0&&f["1850"]<0.5*f["1700"]}
@@ -630,7 +641,7 @@ async function renderCountry(){const iso=st.sel;const c=byIso.get(iso);const nam
   if(st.lens==="protection"&&wdpaGap(iso)){$("c-h1").textContent=name;$("c-lede").textContent=CORE.WDPA_GAP;
     $("c-rows").onclick=e=>openDrawer({kind:"summary",row:areaRow(iso,2015,st.base,{taxon_group:"ALL",biome_num:0}),iso},e.target);$("c-export").onclick=()=>{location.hash=viewLink("export")};
     $("c-link").onclick=async e=>{const q=viewLink("country");try{await navigator.clipboard.writeText(location.href.split("#")[0]+q);e.target.textContent="Link copied";setTimeout(()=>e.target.textContent="Copy link to this view",1500)}catch(_){e.target.textContent=q}};
-    renderTS(iso);renderBiomes(iso);renderTaxa(iso);renderProt(iso);renderDemo(iso);renderSpecies(iso);
+    renderTS(iso);renderRL(iso);renderBiomes(iso);renderTaxa(iso);renderProt(iso);renderDemo(iso);renderSpecies(iso);
     const src1=new Set();rowsFor(iso).forEach(r=>{if(r.source_id)r.source_id.split(";").forEach(x=>src1.add(x))});
     $("c-sources").textContent=`6 · Sources in this country's rows: ${[...src1].map(x=>(D.provBy[x]||{}).version||x).join(" · ")}. Boundaries: Natural Earth de facto; they do not imply endorsement or acceptance by the authors or the CBD. methods v${D.manifest.methods_version} · run ${D.manifest.run_id}.`;
     return}
@@ -644,7 +655,7 @@ async function renderCountry(){const iso=st.sel;const c=byIso.get(iso);const nam
   $("c-rows").onclick=e=>openDrawer({kind:"summary",row:row||areaRow(iso,2015,st.base,{taxon_group:"ALL",biome_num:0}),iso},e.target);
   $("c-export").onclick=()=>{location.hash=viewLink("export")};
   $("c-link").onclick=async e=>{const q=viewLink("country");try{await navigator.clipboard.writeText(location.href.split("#")[0]+q);e.target.textContent="Link copied";setTimeout(()=>e.target.textContent="Copy link to this view",1500)}catch(_){e.target.textContent=q}};
-  renderTS(iso);renderBiomes(iso);renderTaxa(iso);renderProt(iso);renderDemo(iso);renderSpecies(iso);
+  renderTS(iso);renderRL(iso);renderBiomes(iso);renderTaxa(iso);renderProt(iso);renderDemo(iso);renderSpecies(iso);
   const src=new Set();rowsFor(iso).forEach(r=>{if(r.source_id)r.source_id.split(";").forEach(s=>src.add(s))});
   $("c-sources").textContent=`6 · Sources in this country's rows: ${[...src].map(s=>(D.provBy[s]||{}).version||s).join(" · ")}. Boundaries: Natural Earth de facto; they do not imply endorsement or acceptance by the authors or the CBD. methods v${D.manifest.methods_version} · run ${D.manifest.run_id}.`;
 }
@@ -677,6 +688,54 @@ function renderTS(iso){const el=$("ts");const W=el.clientWidth||700,H=300,m={t:1
   const r=areaRow(iso,ys[ys.length-1],t0);const kinds=[...new Set(series[0].pts.map(p=>p.row.band_kind))];
   $("ts-cap").innerHTML=r?`Median (q50) over the joint distribution of 1 000 z draws × species bootstrap, ${esc(nSentence(r))}; ${st.unc?`band = q05–q95 (band_kind: ${kinds.join(", ")} at the years shown)`:"intervals hidden"}. Years are those present in the run (LUH2 ends 2015). <button class="prov" id="ts-prov">⧉ rows</button>`:"";
   if(r)$("ts-prov").onclick=e=>openDrawer({kind:"summary",row:r,iso},e.target);
+}
+/* 1b: the time series split by Red List category (data/redlist/<ISO3>.json, from 50_aggregate.py --by-redlist; area lens, wgs, biome 0, equal weighting) */
+const RL_CATS=["LC","NT","VU","EN","CR","EX/EW","DD","NE"];
+const RL_LABEL={LC:"Least Concern",NT:"Near Threatened",VU:"Vulnerable",EN:"Endangered",CR:"Critically Endangered","EX/EW":"Extinct / Extinct in the Wild",DD:"Data Deficient",NE:"No Red List match"};
+const RL_COLOR={LC:"#3f9c3a",NT:"#9aae12",VU:"#d8b600",EN:"#f26b1d",CR:"#c01505","EX/EW":"#5a2a6e",DD:"#8f877c",NE:"#8f877c"};
+const RL_DASH={DD:"5 3",NE:"1.5 3"};
+function rlRows(d){return d.rows.map(r=>{const o={};d.cols.forEach((c,i)=>o[c]=r[i]);return o})}
+let rlToken=0;
+function renderRL(iso){const el=$("rl"),tab=$("rl-tab"),capEl=$("rl-cap");const my=++rlToken;tab.innerHTML="";capEl.textContent="";
+  el.innerHTML=`<p class="floor">Loading the Red List breakdown…</p>`;
+  loadJSON(`redlist/${iso}.json`).then(d=>{if(my!==rlToken)return;drawRL(iso,d)}).catch(e=>{if(my!==rlToken)return;
+    el.innerHTML=`<p class="floor">${e&&e.status===404?"No Red List breakdown is bundled for this unit.":"The Red List breakdown could not be loaded."}</p>`})}
+function drawRL(iso,d){const el=$("rl"),tab=$("rl-tab"),capEl=$("rl-cap");const t0=st.base;
+  const all=rlRows(d).filter(r=>r.metric===st.metric&&r.habitat_def===st.hab&&r.baseline_year===t0);
+  const cats=RL_CATS.filter(c=>all.some(r=>r.redlist_category===c&&!r.below_floor));
+  if(!cats.length){el.innerHTML=`<p class="floor">No category has at least 5 species at these keys.</p>`;return}
+  const ys=[...new Set(all.map(r=>r.year))].sort((a,b)=>a-b);
+  const get=(c,y)=>all.find(r=>r.redlist_category===c&&r.year===y&&!r.below_floor);
+  const series=cats.map(c=>({c,pts:ys.map(y=>({t:y,row:get(c,y)})).filter(p=>p.row)}));
+  const allS={c:"ALL",pts:ys.map(y=>({t:y,row:all.find(r=>r.redlist_category==="ALL"&&r.year===y)})).filter(p=>p.row)};
+  const W=el.clientWidth||700,H=300,m={t:16,r:176,b:34,l:44};
+  const x=d3.scaleLinear([t0,ys[ys.length-1]],[m.l,W-m.r]);
+  let ymin=100;series.concat([allS]).forEach(s=>s.pts.forEach(p=>{const v=100*(1-p.row.q50);if(v<ymin)ymin=v}));
+  const y=d3.scaleLinear([Math.floor(Math.min(ymin,99)/10)*10,100],[H-m.b,m.t]);
+  const svg=d3.create("svg").attr("viewBox",`0 0 ${W} ${H}`).attr("width",W).attr("height",H).attr("role","img").attr("aria-label",`Estimated ${metricName(st.metric)} remaining since ${t0}, by Red List category`);
+  y.ticks(5).forEach(v=>{svg.append("line").attr("class","gridline").attr("x1",m.l).attr("x2",W-m.r).attr("y1",y(v)).attr("y2",y(v));svg.append("text").attr("class","lab mono faint").attr("x",m.l-8).attr("y",y(v)+4).attr("text-anchor","end").text(v)});
+  xLabels(ys,x,40).forEach(v=>svg.append("text").attr("class","lab mono faint").attr("x",x(v)).attr("y",H-10).attr("text-anchor","middle").text(v));
+  svg.append("line").attr("class","axis").attr("x1",m.l).attr("x2",W-m.r).attr("y1",y(100)).attr("y2",y(100));
+  svg.append("text").attr("class","lab faint").attr("x",m.l).attr("y",m.t-4).text("% of "+t0+" level");
+  const line=d3.line().x(p=>x(p.t)).y(p=>y(100*(1-p.row.q50)));
+  /* end labels: sorted by value, pushed apart so they stay legible */
+  const ends=series.map(s=>({s,yy:y(100*(1-s.pts[s.pts.length-1].row.q50))})).sort((a,b)=>a.yy-b.yy);
+  for(let i=1;i<ends.length;i++)if(ends[i].yy-ends[i-1].yy<13)ends[i].yy=ends[i-1].yy+13;
+  svg.append("path").attr("fill","none").attr("stroke","var(--ink)").attr("stroke-width",1.2).attr("stroke-dasharray","1 3").attr("d",line(allS.pts));
+  series.forEach(s=>{svg.append("path").attr("fill","none").attr("stroke",RL_COLOR[s.c]).attr("stroke-width",2).attr("stroke-dasharray",RL_DASH[s.c]||null).attr("d",line(s.pts));
+    s.pts.forEach(p=>svg.append("circle").attr("cx",x(p.t)).attr("cy",y(100*(1-p.row.q50))).attr("r",2.6).attr("fill",RL_COLOR[s.c]))});
+  ends.forEach(e=>{const last=e.s.pts[e.s.pts.length-1];svg.append("text").attr("class","lab").attr("x",x(last.t)+8).attr("y",e.yy+4).style("fill","var(--ink)").text(`${e.s.c} ${pct(last.row.q50)}`)});
+  svg.append("line").attr("x1",x(t0)).attr("x2",x(t0)).attr("y1",m.t).attr("y2",H-m.b).attr("stroke","var(--ink-faint)").attr("stroke-dasharray","3 3");
+  const cursor=svg.append("g").style("display","none");cursor.append("line").attr("y1",m.t).attr("y2",H-m.b).attr("stroke","var(--ink-2)").attr("stroke-width",1);
+  svg.append("rect").attr("x",m.l).attr("y",m.t).attr("width",W-m.r-m.l).attr("height",H-m.b-m.t).attr("fill","transparent").on("mousemove",ev=>{const [mx]=d3.pointer(ev);const tt=x.invert(mx);let best=ys[0];ys.forEach(v=>{if(Math.abs(v-tt)<Math.abs(best-tt))best=v});cursor.style("display",null).attr("transform",`translate(${x(best)},0)`);
+    showTip(ev,`<b>${best}</b><br>`+series.map(s=>{const r=get(s.c,best);return r?`${s.c} ${pct(r.q50)} ${st.unc?tight(r):""} <span class="mono">n ${fmtN(r.n_species)}</span>`:`${s.c} —`}).join("<br>"))}).on("mouseleave",()=>{cursor.style("display","none");hideTip()});
+  el.replaceChildren(svg.node());
+  const yL=ys[ys.length-1];
+  const trs=cats.map(c=>get(c,yL)).filter(Boolean).map(r=>`<tr><td><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${RL_COLOR[r.redlist_category]};margin-right:6px"></span>${esc(RL_LABEL[r.redlist_category])}</td><td class="num">${fmtN(r.n_species)}</td><td class="num">${pct(r.q50)}</td><td class="num">${st.unc?esc(tight(r)):""}</td></tr>`).join("");
+  const aR=all.find(r=>r.redlist_category==="ALL"&&r.year===yL);
+  const small=RL_CATS.filter(c=>all.some(r=>r.redlist_category===c)&&!cats.includes(c));
+  tab.innerHTML=`<table class="sp"><thead><tr><th>Category</th><th class="num">Species</th><th class="num">${yL}</th><th class="num">${st.unc?"q05, q95":""}</th></tr></thead><tbody>${trs}${aR?`<tr><td><b>All species</b></td><td class="num">${fmtN(aR.n_species)}</td><td class="num">${pct(aR.q50)}</td><td class="num">${st.unc?esc(tight(aR)):""}</td></tr>`:""}</tbody></table>`;
+  capEl.innerHTML=`Whole-genome ${metricName(st.metric)}, ${esc(habLabel())}, all biomes, ${yL} against ${t0}. Each line is the median of the species in that category, with the same joint Monte Carlo as panel 1 (band_kind: ${esc(d.band_kind.join(", "))}); the dotted line is all species and equals panel 1. The loss is calculated from the change in natural habitat inside each species' range and the exponent z; the Red List category does not enter the calculation, so differences between categories come from where the ranges lie, and the intervals overlap. “No Red List match” = species of the range-map set without a Red List assessment record. ${small.length?`Not drawn (fewer than 5 species): ${esc(small.join(", "))}. `:""}Category counts are of species with range data in this run.`;
 }
 function dotInterval(el,rows,opts){const W=el.clientWidth||420,rowH=30,H=rows.length*rowH+8,lw=Math.min(190,W*0.42),vx=W-96;
   if(!rows.length){el.innerHTML=`<p class="floor">${esc((opts&&opts.empty)||"No rows at these keys.")}</p>`;return}
@@ -796,7 +855,7 @@ function renderSpeciesExpand(iso,r){const cell=$("sp-exp");if(!cell)return;
 
 /* ---------- render: compare ---------- */
 function renderCompare(){const chips=$("chips");chips.replaceChildren();st.cmp.forEach((iso,i)=>{const s=document.createElement("span");s.className="chip";s.innerHTML=`<i style="background:${CAT[i%5]}"></i>${esc(nameOf(iso))}<button aria-label="Remove ${esc(nameOf(iso))}">✕</button>`;s.querySelector("button").onclick=()=>{st.cmp=st.cmp.filter(x=>x!==iso);renderCompare()};chips.appendChild(s)});
-  if(needShards()){Promise.all(st.cmp.filter(i=>RUN.includes(i)&&!isCompact(i)&&!D.shards[i]).map(ensureShards)).then(n=>{if(n.length)renderCompare()})}
+  if(needShards()){Promise.all(RUN.filter(i=>!isCompact(i)&&!D.shards[i]).map(ensureShards)).then(n=>{if(n.length)renderCompare()})}   /* the focus countries: the compare set and the scatter */
   const el=$("cmp");const W=el.clientWidth||700,H=300,m={t:16,r:170,b:34,l:44};const t0=st.base;const ys=yearsPresent();const x=d3.scaleLinear([t0,ys[ys.length-1]],[m.l,W-m.r]);
   const ser=st.cmp.map((iso,i)=>({iso,color:CAT[i%5],pts:RUN.includes(iso)?ys.map(t=>({t,row:areaRow(iso,t,t0,null,"default")})).filter(p=>p.row&&!p.row.below_floor):[]})).filter(s=>s.pts.length);
   const bands=st.unc&&ser.length<=3;let ymin=100,ymax=100;ser.forEach(s=>s.pts.forEach(p=>{const v=100*(1-(bands?p.row.q95:p.row.q50));if(v<ymin)ymin=v;const v2=100*(1-(bands?p.row.q05:p.row.q50));if(v2>ymax)ymax=v2}));
@@ -822,6 +881,62 @@ function renderCompare(){const chips=$("chips");chips.replaceChildren();st.cmp.f
     if(r.below_floor)return `<tr class="grey"><td>${esc(nameOf(iso))}</td><td class="n" colspan="5">${esc(floorMsg(r))}</td><td></td></tr>`;
     return `<tr><td>${esc(nameOf(iso))}${remnantFlag(iso)?" "+remnantBadge:""}${residueFlag(iso)?" "+residueBadge:""}</td><td class="num n">${pct(r.q50)} ${tight(r)}</td><td class="num n">${esc(nOfNShort(r))}</td><td class="num n">${nBiomesPresent(iso)} / 14</td><td class="num n">${wdpaGap(iso)?`<span style="font-family:var(--sans);font-size:11.5px">${esc(CORE.WDPA_GAP)}</span>`:s?pctPlain(s.q50):"—"}</td><td>${r.confidence}${r.confidence==="low"?" ▨":""}</td><td><button class="prov" data-iso="${iso}">⧉</button></td></tr>`}).join("")+`<tr class="grey"><td colspan="7">All other countries: no estimate in this run (${isR1()?"the first run":"the run"} covers ${RUN.length} countries).</td></tr></tbody>`;
   T.querySelectorAll("button[data-iso]").forEach(b=>b.onclick=()=>openDrawer({kind:"summary",row:areaRow(b.dataset.iso,2015,t0,null,"default"),iso:b.dataset.iso},b));
+  renderScatter();
+}
+
+/* ---------- render: compare scatter — every run country at the selected keys against its LUH2 primary-land loss (the letter's Figure 1C as a live chart, 2026-10-26) ---------- */
+/* the exponent prior of the selected metric × marker domain (data/exponent_priors.json = the global rows of 30_z/z_priors; null when not bundled) */
+function zPrior(){const rows=Array.isArray(D.priors)?D.priors:[];return rows.find(r=>r.metric===st.metric&&r.marker_domain===st.dom&&r.group_level==="global")||null}
+/* one point per run country with an area row at the selected keys (default rows; the loaded shards of a focus country) and LUH2 primary-land
+   fractions at the baseline and the year (bundle_manifest.luh2_primary_frac): x = 1 − f(year) / f(baseline), y = q50 */
+function scatterPoints(){const lf=(D.manifest||{}).luh2_primary_frac||{},b=String(st.base),yv=String(st.year),pts=[];let noFrac=0,notBundled=0;
+  RUN.forEach(iso=>{const row=areaRow(iso,st.year,st.base,null,"default");
+    if(!row){if(!rowsCover(iso,lensKeys(st.year),"default"))notBundled++;return}
+    if(row.below_floor||row.q50==null)return;
+    const f=lf[iso];if(!f||f[b]==null||f[yv]==null||!(f[b]>0)){noFrac++;return}
+    pts.push({iso,row,x:1-f[yv]/f[b],y:row.q50,n:row.n_species,res:residueFlag(iso),rem:remnantFlag(iso)})});
+  return {pts,noFrac,notBundled}}
+function pearson(pts){const n=pts.length;if(n<3)return null;let mx=0,my=0;pts.forEach(p=>{mx+=p.x;my+=p.y});mx/=n;my/=n;let sxy=0,sxx=0,syy=0;pts.forEach(p=>{const dx=p.x-mx,dy=p.y-my;sxy+=dx*dy;sxx+=dx*dx;syy+=dy*dy});return sxx>0&&syy>0?sxy/Math.sqrt(sxx*syy):null}
+/* a click on a point: the same rule as the "Add a country" box (up to five) */
+function addToCompare(iso){const msg=$("addc-msg");if(st.cmp.includes(iso)){msg.textContent=`${nameOf(iso)} is already in the compare set.`;return}if(st.cmp.length>=5){msg.textContent="Compare up to 5; use the Export view for the table.";return}st.cmp.push(iso);msg.textContent="";renderCompare()}
+const scRadius=n=>Math.max(2,Math.sqrt(Math.max(0,n||0)/5000)*12);   /* point area ∝ n; 5 000 species → 12 px radius */
+const scR=p=>p.res?Math.max(scRadius(p.n),4.5):scRadius(p.n);         /* a residue-flagged unit is a ring that stays visible (as in the letter's figure, its size is not read as n) */
+const scKey=(fill,stroke,w,dash,rr=5)=>{const s=Math.ceil(rr*2+w+2);return `<svg width="${s}" height="${s}" style="display:inline-block;vertical-align:middle;margin-right:4px"><circle cx="${s/2}" cy="${s/2}" r="${rr}" fill="${fill}" stroke="${stroke}" stroke-width="${w}"${dash?` stroke-dasharray="${dash}"`:""}/></svg>`};
+function renderScatter(){const el=$("cmp-scatter"),leg=$("cmp-sc-legend"),capEl=$("cmp-sc-cap");leg.replaceChildren();capEl.textContent="";
+  if(st.lens!=="area"){el.innerHTML=`<p class="note">This chart is drawn for the habitat-area lens only (its x axis is habitat loss). Switch the lens to “Habitat area” to see it.</p>`;return}
+  const {pts,noFrac,notBundled}=scatterPoints();
+  if(!pts.length){el.innerHTML=`<p class="floor">${notBundled&&!noFrac?"Rows at these keys are bundled for the focus countries only; none is loaded yet.":`No country has both an estimate and LUH2 primary-land fractions for ${st.base} → ${st.year} in this bundle.`}</p>`;return}
+  const W=el.clientWidth||700,H=380,m={t:28,r:18,b:48,l:46},pw=W-m.l-m.r;
+  const xmax=100*Math.max(...pts.map(p=>p.x)),ymaxRaw=100*Math.max(...pts.map(p=>p.y)),yminRaw=100*Math.min(0,...pts.map(p=>p.y));
+  const x=d3.scaleLinear([0,Math.max(xmax,1)],[m.l,W-m.r]).nice();
+  /* loss drawn downward (0 % at the top); gains sit above the 0 line, those beyond −100 % are drawn at the top edge and counted in the caption */
+  const y=d3.scaleLinear([Math.max(yminRaw,-100),Math.max(ymaxRaw,1)],[m.t,H-m.b]).nice();const yLo=y.domain()[0];let nOff=0;
+  const svg=d3.create("svg").attr("viewBox",`0 0 ${W} ${H}`).attr("width",W).attr("height",H).attr("role","img").attr("aria-label",`Estimated ${metricName(st.metric)} loss by country against LUH2 primary-land loss, ${st.base} to ${st.year}`);
+  svg.append("defs").append("clipPath").attr("id","sc-clip").append("rect").attr("x",m.l).attr("y",m.t).attr("width",pw).attr("height",H-m.t-m.b);
+  y.ticks(5).forEach(v=>{svg.append("line").attr("class",v===0?"axis":"gridline").attr("x1",m.l).attr("x2",W-m.r).attr("y1",y(v)).attr("y2",y(v));svg.append("text").attr("class","lab mono faint").attr("x",m.l-8).attr("y",y(v)+4).attr("text-anchor","end").text(v)});
+  xLabels(x.ticks(6),x,40).forEach(v=>svg.append("text").attr("class","lab mono faint").attr("x",x(v)).attr("y",H-m.b+16).attr("text-anchor","middle").text(v));
+  svg.append("line").attr("class","axis").attr("x1",m.l).attr("x2",W-m.r).attr("y1",H-m.b).attr("y2",H-m.b);
+  svg.append("text").attr("class","lab faint").attr("x",m.l).attr("y",m.t-12).text(fitLabel(`Estimated loss of ${metricName(st.metric)} since ${st.base} (median, %)`,pw));
+  svg.append("text").attr("class","lab faint").attr("x",m.l+pw/2).attr("y",H-8).attr("text-anchor","middle").text(fitLabel(`LUH2 primary-land loss, ${st.base} → ${st.year} (% of the ${st.base} primary area)`,pw));
+  const zp=zPrior();
+  if(zp&&zp.z_median>0){const z=zp.z_median,x1=x.domain()[1];const cur=d3.range(0,x1+1e-9,x1/200).map(v=>({x:v,y:100*(1-Math.pow(Math.max(0,1-v/100),z))}));
+    svg.append("path").attr("class","plaw").attr("clip-path","url(#sc-clip)").attr("fill","none").attr("stroke","var(--ink-2)").attr("stroke-width",1.2).attr("stroke-dasharray","5 4").attr("d",d3.line().x(p=>x(p.x)).y(p=>y(p.y))(cur))}
+  const cmpIdx=new Map(st.cmp.map((iso,i)=>[iso,i]));
+  pts.slice().sort((a,b)=>b.n-a.n).forEach(p=>{const inCmp=cmpIdx.has(p.iso),gain=p.y<0,yv=100*p.y,off=yv<yLo;if(off)nOff++;
+    const fill=p.res?"var(--card)":gain?"var(--div-neg)":ramp[rampClass(Math.max(0,p.y))];
+    const c=svg.append("circle").attr("class","sc-pt pt"+(p.res?" res":"")+(inCmp?" cmp":"")+(off?" off":"")).attr("cx",x(100*p.x)).attr("cy",y(off?yLo:yv)).attr("r",scR(p)).attr("fill",fill)
+      .attr("stroke",inCmp?CAT[cmpIdx.get(p.iso)%5]:p.res?"var(--ink)":"var(--ink-faint)").attr("stroke-width",inCmp?2.5:p.res?1.2:.6).attr("stroke-dasharray",p.res?"1.5 2":null).attr("fill-opacity",p.res?1:.92)
+      .attr("aria-label",`${nameOf(p.iso)}: ${fmtVal(p.row)} ${tight(p.row)}, ${nSentence(p.row)}; primary land lost ${st.base} → ${st.year}: ${pctPlain(p.x)}`);
+    c.on("mousemove",ev=>showTip(ev,`<b>${esc(nameOf(p.iso))}</b><br>${fmtVal(p.row)} ${st.unc?tight(p.row):""} ${esc(metricName(st.metric))}${off?" (beyond the axis; drawn at the top edge)":""}<br>${esc(nSentence(p.row))} · ${esc(ownZ(p.row))} · confidence <span class="mono">${p.row.confidence}</span><br>Primary land lost ${st.base} → ${st.year}: ${pctPlain(p.x)} of the ${st.base} primary area${p.rem?" "+remnantBadge:""}${p.res?" "+residueBadge:""}<br><span class="mono">${inCmp?"in the compare set":"click → add to the compare set"}</span>`)).on("mouseleave",hideTip).on("click",()=>{hideTip();addToCompare(p.iso)})});
+  const labs=pts.filter(p=>cmpIdx.has(p.iso)).map(p=>({r:scR(p),x:x(100*p.x),y:y(Math.max(yLo,100*p.y)),t:nameOf(p.iso)}));
+  labs.sort((a,b)=>a.y-b.y);for(let i=1;i<labs.length;i++)if(labs[i].y-labs[i-1].y<13)labs[i].y=labs[i-1].y+13;
+  labs.forEach(l=>{const right=l.x+l.r+6+l.t.length*6.6>W-m.r;svg.append("text").attr("class","sc-lab").attr("x",right?l.x-l.r-6:l.x+l.r+6).attr("y",l.y+4).attr("text-anchor",right?"end":"start").text(l.t)});
+  el.replaceChildren(svg.node());
+  leg.innerHTML=`<span>Species in the estimate:</span>${[100,1000,5000].map(n=>`<span>${scKey("var(--ramp-3)","var(--ink-faint)",.6,null,scRadius(n))}${fmtN(n)}</span>`).join("")}<span>${scKey("var(--card)","var(--ink)",1.2,"1.5 2")}hollow, dotted ring: residue flag (ring not sized by n)</span><span>${scKey("var(--ramp-3)","var(--cat-1)",2.5,null)}thick outline, named: in the compare set</span><span>fill: the map's colour scale for the value</span>`;
+  const rr=pearson(pts);
+  const zTxt=zp?`dashed line: the power law at the median exponent (z = ${fmtNum(zp.z_median,3)}; the ${metricName(st.metric)} prior of the ${domLabel()} domain, fitted on ${fmtN(zp.n_species)} species)`:"no exponent prior is bundled, so no dashed line is drawn";
+  const keysTxt=`${metricName(st.metric)}, ${habLabel()}, ${domLabel()} exponents${st.taxon!=="ALL"?`, ${TAXON_LABEL[st.taxon]||st.taxon}`:""}${st.biome!==0?`, ${D.biomeName[st.biome]}`:""}`;
+  capEl.textContent=`${fmtN(pts.length)} countries and territories with an estimate at these settings (${keysTxt})${notBundled?`; ${fmtN(notBundled)} run countries have no bundled row at these keys (taxon and biome rows are bundled for the focus countries only)`:""}${noFrac?`; ${fmtN(noFrac)} with an estimate but no LUH2 primary land in ${st.base}`:""}. x = LUH2 primary-land loss ${st.base} → ${st.year} as a share of the ${st.base} primary area${st.hab==="natural"?" (x uses the primary-land fractions; the estimate uses primary + secondary habitat)":""}; y = the median estimate (q50), drawn downward${nOff?`; ${fmtN(nOff)} gains beyond ${pctPlain(-yLo/100)} are drawn at the top edge`:""}. Point area = species in the estimate; fill = the map's colour for the value; ${zTxt}. Pearson r = ${rr==null?"—":fmtNum(rr,2)} (n = ${fmtN(pts.length)}). The correlation is an internal consistency check, not a finding: the values transform the same land-use layers through one exponent prior, so a close fit is expected by construction; the spread around the line comes from where each country's species ranges sit relative to the converted land and from species with their own exponent. Country values are not an ordering of countries: species coverage, priors and range data differ by country, so a value is read with its species count and confidence, never as a rank.`;
 }
 $("addc").addEventListener("change",e=>{const v=e.target.value.trim().toLowerCase();const c=byName.get(v);const msg=$("addc-msg");if(!c){msg.textContent=v?`No country named “${e.target.value}” in the index.`:"";return}
   if(!RUN.includes(c.iso3)){msg.textContent=`${c.name_en}: no estimate in this run; only the ${RUN.length} ${isR1()?"first-run ":""}countries can be added.`;e.target.value="";return}
@@ -920,10 +1035,10 @@ async function renderMethods(){if(methodsLoaded)return;methodsLoaded=true;
 async function boot(){
   const manifest=await loadJSON("bundle_manifest.json");
   const dParts=(manifest.summary_default||[{file:"country_summary_default.json",boot:true}]).filter(x=>x.boot!==false).map(x=>x.file);
-  const [index,biomes,coverage,shardIndex,prov,formulas,protArea,topo,...dflts]=await Promise.all(["country_index.json","biome_lookup.json","country_coverage.json","country_summary_index.json","provenance_manifest.json","formula_templates.json","country_protection_area.json","countries-110m.json",...dParts].map(loadJSON));
+  const [index,biomes,coverage,shardIndex,prov,formulas,protArea,topo,priors,...dflts]=await Promise.all([...["country_index.json","biome_lookup.json","country_coverage.json","country_summary_index.json","provenance_manifest.json","formula_templates.json","country_protection_area.json","countries-110m.json"].map(loadJSON),loadJSON("exponent_priors.json").catch(e=>{if(e&&e.status===404)return null;throw e}),...dParts.map(loadJSON)]);
   const asRows=x=>Array.isArray(x)?x:decodeTable(x);   /* a table over 5 MB is written in the compact format (60_bundle.py) */
   const drows=[];dflts.forEach(t=>decodeTable(t).forEach(r=>drows.push(r)));drows.constants=(dflts[0]||{}).constants||{};
-  D.manifest=manifest;D.index=index;D.biomes=biomes;D.coverage=asRows(coverage);D.defaultRows=drows;D.shardIndex=shardIndex;D.prov=prov;D.formulas=formulas;D.protArea=asRows(protArea);
+  D.manifest=manifest;D.index=index;D.biomes=biomes;D.coverage=asRows(coverage);D.defaultRows=drows;D.shardIndex=shardIndex;D.prov=prov;D.formulas=formulas;D.protArea=asRows(protArea);D.priors=Array.isArray(priors)?priors:null;
   drows.forEach(r=>{if(!D.defaultByIso.has(r.iso3))D.defaultByIso.set(r.iso3,[]);D.defaultByIso.get(r.iso3).push(r)});
   D.provBy={};prov.forEach(p=>D.provBy[p.source_id]=p);D.formulaBy={};formulas.forEach(f=>D.formulaBy[f.formula_id]=f);D.biomeName={};biomes.forEach(b=>D.biomeName[b.biome_num]=b.biome_name);
   D.provRule=CORE.provRule(manifest.prov_id_rule);D.spRule=manifest.species_prov_id_rule?CORE.provRule(manifest.species_prov_id_rule):null;
