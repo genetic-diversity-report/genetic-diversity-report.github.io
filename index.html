@@ -167,7 +167,7 @@ textarea.tsv{width:100%;min-height:120px;font-family:var(--mono);font-size:11.5p
   <div class="sel"><label for="s-base">Baseline</label><select id="s-base"><option value="1700">1700</option><option value="1850" selected>1850</option><option value="1900">1900</option><option value="1970">1970</option><option value="2010">2010 · GBF reference period 2011–2020 (LUH2 to 2015)</option></select></div>
   <div class="sel"><label for="s-hab">Habitat</label><select id="s-hab"><option value="primary">Primary only</option><option value="natural">Primary + secondary</option></select></div>
   <div class="sel"><label for="s-dom">Marker domain</label><select id="s-dom"><option value="wgs">Whole-genome</option><option value="microsat">Microsatellite</option></select></div>
-  <div class="sel"><label for="s-lens">Lens</label><select id="s-lens"><option value="area">Habitat area</option><option value="protection">Protection</option><option value="demography">Demography</option></select></div>
+  <div class="sel"><label for="s-lens">Lens</label><select id="s-lens"><option value="area">Habitat area</option><option value="protection">Protection</option><option value="demography">Demography</option><!-- GBF-OBSERVED-BEGIN --><option value="gbf_ne500" hidden>GBF indicator: Ne &gt; 500 (9 countries)</option><option value="gbf_pm" hidden>GBF indicator: populations maintained (9 countries)</option><!-- GBF-OBSERVED-END --></select></div>
   <div class="sel"><label for="s-taxon">Taxon</label><select id="s-taxon"><option value="ALL">All taxa</option></select></div>
   <div class="sel"><label for="s-biome">Biome</label><select id="s-biome"><option value="0">All biomes</option></select></div>
   <div class="sel check"><input type="checkbox" id="s-unc" checked><label for="s-unc">Show uncertainty</label></div>
@@ -193,7 +193,7 @@ textarea.tsv{width:100%;min-height:120px;font-family:var(--mono);font-size:11.5p
       <div class="stat"><span class="k" id="world-k"></span><span class="big num" id="world-val">—</span><span class="v" id="world-int"></span></div>
       <div class="stat"><span class="k">Coverage</span><span class="v" id="world-cov"></span></div>
       <div class="stat"><span class="k">Before 1850</span><span class="v" id="world-pre1850"></span></div>
-      <div class="stat"><span class="k">Reading the map</span><span class="v">Do not order countries by these values: species coverage, priors and range data differ by country. Each value is shown with its n and its confidence.</span></div>
+      <div class="stat"><span class="k">Reading the map</span><span class="v" id="world-read">Do not order countries by these values: species coverage, priors and range data differ by country. Each value is shown with its n and its confidence.</span></div>
       <div class="btnrow"><button class="btn" id="open-country">Open country page →</button><button class="prov" id="world-prov">⧉ rows</button></div>
     </aside>
   </div>
@@ -235,6 +235,14 @@ textarea.tsv{width:100%;min-height:120px;font-family:var(--mono);font-size:11.5p
     <div class="card"><h2>3 · Protection: share of today's estimated diversity inside protected areas and OECMs</h2><p class="sub">(A<sub>PA</sub>/A<sub>t</sub>)<sup>z</sup>, diversity-weighted. The 30 % line is the Target 3 area target, shown for orientation only; this bar is not a 3.1 value. Black tick = share of land area protected. A habitat-fraction transform: it does not mean diversity is maintained inside reserves — drift continues there.</p><div id="prot"></div><p class="caption" id="prot-cap"></p></div>
     <div class="card"><h2>4 · Demography lens (shown beside, never summed)</h2><p class="sub">Population decline → diversity through the same power law. Each stratum has its own species set, n and confidence.</p><div id="demo"></div><p class="caption" id="demo-cap">The area lens and this lens estimate the same latent quantity by different routes; their disagreement is a diagnostic, not an error bar.</p></div>
   </div>
+  <!-- GBF-OBSERVED-BEGIN -->
+  <div class="card" id="gbf-card" style="margin-top:18px" hidden>
+    <h2>4b · National GBF indicator assessment (observed, not modelled)</h2>
+    <p class="sub">Species-by-species assessments from national demographic data in the nine-country pilot. Status today, not loss since a baseline; shown beside the modelled estimates, never summed with them.</p>
+    <div class="tscroll"><table class="sp" id="gbf-table"></table></div>
+    <p class="caption" id="gbf-cap"></p>
+  </div>
+  <!-- GBF-OBSERVED-END -->
   <div class="card" style="margin-top:18px">
     <h2 id="sp-title">5 · Species in this estimate</h2>
     <p class="sub">Each row is a <code>species_country_loss</code> record with its <code>prov_id</code>. Expand (▸) draws the species' own curve and the formula with its numbers substituted. Species without a Red List name show their <code>species_id</code>.</p>
@@ -554,19 +562,66 @@ async function openProv(id){const parts=id.split(":");const table=parts[0];
   else if(table==="species_country_loss"){const k=D.spRule?CORE.speciesProvKeys(id,D.spRule):null;const iso=k&&k.iso3;if(!k||!RUN.includes(iso)){openDrawer({kind:"species",row:null,iso});return}
     let sh=null;try{sh=await ensureSpeciesShard(iso,k)}catch(e){openDrawer({kind:"species",row:null,iso,note:shardNote(e)});return}
     openDrawer({kind:"species",row:sh?(D.spShards[sh.id]||[]).find(x=>x.prov_id===id)||null:null,iso,note:!sh&&fullOnly(iso,k)?esc(CORE.NOT_BUNDLED):null})}}
-function renderAll(){if(st.view==="home")renderHome();else if(st.view==="country")renderCountry();else if(st.view==="compare")renderCompare();else if(st.view==="export")renderExport();else if(st.view==="methods")renderMethods()}
+function renderAll(){const off=isGbf()&&st.view==="home"&&!!D.gbf;["s-metric","s-base","s-hab","s-dom","s-taxon","s-biome"].forEach(id=>{$(id).disabled=off});if(st.view==="home")renderHome();else if(st.view==="country")renderCountry();else if(st.view==="compare")renderCompare();else if(st.view==="export")renderExport();else if(st.view==="methods")renderMethods()}
 
 /* ---------- banner + footer ---------- */
 function renderBanner(){const s=D.manifest.scope;const groups=Object.entries(s.n_species_range_by_group).map(([g,n])=>`${fmtN(n)} ${g}`).join(", ");
   const scopeText=CORE.runSuffix(s.run_id)==="r1"?`<strong>First run, ${esc(s.run_date)}:</strong> ${s.countries.length===5?"five":s.countries.length} countries (${s.countries.map(c=>esc(c.name)).join(", ")}); <span class="num">${fmtN(s.n_species_range_data)}</span> species with range data (${groups}; no ${s.groups_missing.join(", ")}), of which <span class="num">${fmtN(s.n_species_in_countries)}</span> have area rows in the five countries (<span class="num">${fmtN(s.n_species_country_pairs_range)}</span> species × country pairs with range presence; <span class="num">${fmtN(s.n_own_z_species_in_countries)}</span> species with their own exponent); exponents from <span class="num">${fmtN(s.n_species_with_exponent)}</span> species; LUH2 ends ${s.luh2_last_year}. Capped first run ${esc(s.run_id.split("-").pop())} (a random species sample); the widened run r2 will revise every value — quote with the run id <span class="num">${esc(s.run_id)}</span>.`
     :`<strong>Run ${esc(s.run_id)}:</strong> ${CORE.runScopeSentence(s,x=>`<span class="num">${x}</span>`)}`;
   $("banner").innerHTML=`<div class="wrap">${scopeText} <strong>Model-based estimate, not the headline indicator A.4.</strong> Every number opens its provenance. <span class="num">methods v${esc(D.manifest.methods_version)} · run ${esc(D.manifest.run_id)}</span></div>`;
-  $("footer").innerHTML=`<span>methods v${esc(D.manifest.methods_version)}</span><span>run <span class="num">${esc(D.manifest.run_id)}</span></span><span>bundle built ${esc(D.manifest.built_utc)} by <span class="num">${esc(D.manifest.builder)}</span> (${D.manifest.files.length} files)</span><span>Boundaries: Natural Earth de facto · they do not imply endorsement or acceptance by the authors or the CBD</span><span>Moisés Expósito-Alonso · University of California Berkeley · Innovative Genomics Institute · Howard Hughes Medical Institute</span><span>Protected areas: ${PP_CITE_HTML}</span>`}
+  $("footer").innerHTML=`<span>methods v${esc(D.manifest.methods_version)}</span><span>run <span class="num">${esc(D.manifest.run_id)}</span></span><span>bundle built ${esc(D.manifest.built_utc)} by <span class="num">${esc(D.manifest.builder)}</span> (${D.manifest.files.length} files)</span><span>Boundaries: Natural Earth de facto · they do not imply endorsement or acceptance by the authors or the CBD</span><span>Protected areas: ${PP_CITE_HTML}</span><span>All releases (data, page, licences): <a href="https://github.com/genetic-diversity-report/genetic-diversity-report.github.io" target="_blank" rel="noopener">github.com/genetic-diversity-report/genetic-diversity-report.github.io</a></span><span>Moisés Expósito-Alonso · University of California Berkeley · Innovative Genomics Institute · Howard Hughes Medical Institute</span>`}
 
 /* ---------- render: home ---------- */
 function mapTitle(){const m=metricName(st.metric);if(st.lens==="protection")return `Share of today's estimated ${m} inside protected areas and OECMs`;if(st.lens==="demography")return `Demography lens: estimated loss of ${m} implied by Red List criterion-A declines`;return `Estimated loss of ${m}, ${st.base} → ${st.year}`}
+/* GBF-OBSERVED-BEGIN */
+/* ---------- GBF indicator lenses (observed national assessments, nine countries; gbf/gbf_indicators.json from 66_bundle_gbf.py) ---------- */
+const GBF_IND={gbf_ne500:{k:"ne500",h1:"What share of populations in the nine pilot countries have an effective size above 500?",title:"Proportion of populations with Ne > 500 (GBF headline indicator A.4), mean over assessed species",unit:"populations with Ne > 500",legend:"proportion of populations with Ne > 500"},
+  gbf_pm:{k:"pm",h1:"What share of populations in the nine pilot countries are still maintained?",title:"Proportion of populations maintained (extant / (extant + extinct)), mean over assessed species",unit:"populations maintained",legend:"proportion of populations maintained"}};
+const isGbf=()=>!!GBF_IND[st.lens];
+const gbfOf=iso=>(D.gbf&&D.gbf.countries[iso])||null;
+function gbfStat(s){if(!s||!s.n)return "no species with data";return `${pctPlain(s.mean)}${s.lo!=null?` (95 % band ${pctPlain(s.lo)}–${pctPlain(s.hi)})`:""}, ${fmtN(s.n)} species`}
+const HOME_TXT={};
+function homeText(gbf){["home-lede","map-sub","world-read"].forEach(id=>{if(!(id in HOME_TXT))HOME_TXT[id]=$(id).innerHTML});
+  if(!gbf){["home-lede","map-sub","world-read"].forEach(id=>{$(id).innerHTML=HOME_TXT[id]});return}
+  $("home-lede").innerHTML='Observed by national experts in the nine-country pilot, not modelled by this report: for each assessed species, the share of its populations with an effective size above 500 or still maintained. Shown as a separate lens, never summed with the modelled estimates. <a href="#methods">How we got this</a>.';
+  $("map-sub").textContent="Fill: mean over assessed species. Dotted: not in the nine-country pilot. Click a country for its species groups and the modelled estimate beside it.";
+  $("world-read").textContent="Species were chosen by each country's assessors and the number with data differs by country and indicator, so values are not a ranking of countries. Each value is shown with its species count."}
+function renderGbfMap(){
+  homeText(true);
+  const ind=GBF_IND[st.lens],el=$("map");if(!features.length)return;const W=el.clientWidth||760,H=Math.round(W*0.5);
+  const proj=d3.geoEqualEarth().fitSize([W,H],{type:"Sphere"});const path=d3.geoPath(proj);
+  const svg=d3.create("svg").attr("viewBox",`0 0 ${W} ${H}`).attr("width",W).attr("height",H).attr("role","img").attr("aria-label",ind.title);
+  svg.append("path").attr("class","sphere").attr("d",path({type:"Sphere"}));
+  svg.append("path").attr("class","graticule").attr("d",path(d3.geoGraticule10()));
+  const g=svg.append("g"),scale=d3.interpolateRgb("#e8dcc4","#1a476f");
+  features.forEach(f=>{const iso=isoByM49.get(f.id);const name=(byIso.get(iso)||{}).name_en||f.properties.name;const b=gbfOf(iso);const s=b?b[ind.k]:null;const has=!!s&&s.n>0;
+    const label=has?`${name}: ${gbfStat(s)} of ${fmtN(b.n_species)} species assessed`:`${name}: not in the nine-country pilot`;
+    const p=g.append("path").attr("class","country").attr("d",path(f)).attr("fill",has?scale(Math.min(1,s.mean)):"var(--paper-2)").attr("tabindex",has?0:-1).attr("role",has?"button":null).attr("aria-label",label);
+    if(!has)p.attr("stroke","var(--ink-faint)").attr("stroke-dasharray","1.5 2").attr("stroke-width",.7);
+    p.on("mousemove",ev=>{showTip(ev,`<b>${esc(name)}</b><br>${has?`${esc(gbfStat(s))} with data, of ${fmtN(b.n_species)} species assessed<br><span class="mono">click → country page</span>`:"Not in the nine-country pilot"}`)}).on("mouseleave",hideTip);
+    if(has&&RUN.includes(iso)){p.on("click",()=>{st.sel=iso;hideTip();location.hash=viewLink("country")}).on("keydown",ev=>{if(ev.key==="Enter"||ev.key===" "){ev.preventDefault();st.sel=iso;location.hash=viewLink("country")}})}});
+  el.replaceChildren(svg.node());
+  $("map-title").textContent=ind.title;
+  $("legend").innerHTML=`<span><span class="sw" style="background:#e8dcc4"></span>0 %</span><span><span class="sw" style="background:${scale(.5)}"></span>50 %</span><span><span class="sw" style="background:#1a476f"></span>100 %</span><span><span class="sw" style="background:var(--paper-2);border-style:dotted"></span>not in the pilot</span>`;
+  $("year").disabled=true;$("play").disabled=true;
+  $("map-caption").innerHTML=`Observed, not modelled: ${esc(D.gbf.indicators[ind.k])}. Each country's value is the equal-weight mean over its assessed species (about ${Math.round(D.gbf.n_species_country_pairs/9)} per country); species without the data needed for this indicator are left out, not imputed, and the species counts differ between countries. Metric, baseline, habitat, marker-domain, taxon and biome selectors do not apply to this lens. Source: ${esc(D.gbf.source)}. Boundaries: Natural Earth de facto.`;
+  $("home-h1").textContent=ind.h1}
+function renderGbfWorld(){const ind=GBF_IND[st.lens],p=D.gbf.pooled;const s=p[ind.k];
+  $("world-k").textContent="Nine pilot countries, species pooled";$("world-val").textContent=pctPlain(s.mean);
+  $("world-int").textContent=`${s.lo!=null?`95 % band ${pctPlain(s.lo)}–${pctPlain(s.hi)} · `:""}${fmtN(s.n)} species with data`;
+  $("world-cov").textContent=`${fmtN(p.n_species)} species × country pairs assessed (${fmtN(D.gbf.n_records)} records) in Australia, Belgium, Colombia, France, Japan, Mexico, South Africa, Sweden and the United States. Species were chosen by each country's assessors, not sampled: this is not a global or national census.`;
+  $("world-pre1850").textContent="not applicable (status today)"}
+function renderGbfCard(iso){const card=$("gbf-card"),b=gbfOf(iso);if(!b){card.hidden=true;return}card.hidden=false;
+  const rowOf=(label,x)=>`<tr><td>${esc(label)}</td><td class="num">${gbfStat(x.ne500)}</td><td class="num">${gbfStat(x.pm)}</td></tr>`;
+  const groups=Object.entries(b.by_group).filter(([,x])=>x.ne500.n>=5||x.pm.n>=5).sort((a,c)=>c[1].n_species-a[1].n_species);
+  $("gbf-table").innerHTML=`<thead><tr><th>Species set</th><th class="num">Populations with Ne &gt; 500</th><th class="num">Populations maintained</th></tr></thead><tbody>${rowOf(`All assessed species (${fmtN(b.n_species)})`,b)}${groups.map(([g,x])=>rowOf(`${g} (${fmtN(x.n_species)})`,x)).join("")}</tbody>`;
+  const ref=areaRow(iso,2015,st.base,{biome_num:0});
+  $("gbf-cap").innerHTML=`Mean over species, 95 % band by bootstrap over species where n ≥ 5; species lacking the data for an indicator are left out, not imputed. Groups with fewer than 5 species with data for both indicators are not listed. Beside these, this report's modelled habitat-area estimate for ${esc(byIso.get(iso)?byIso.get(iso).name_en:iso)} (${st.base} → 2015, ${esc(metricName(st.metric))}) is ${ref&&!ref.below_floor?pct(ref.q50):"not available at these settings"}: a different quantity (loss since a baseline, all mapped species) and a different species set. Source: ${esc(D.gbf.source)}.`}
+/* GBF-OBSERVED-END */
 async function renderHome(){if(needShards())await Promise.all([...RUN.filter(i=>!isCompact(i)),"WLD"].map(ensureShards));renderMap();renderWorldStat()}
 function renderMap(){
+  if(isGbf()&&D.gbf)return renderGbfMap();
+  if(HOME_TXT["home-lede"]!=null)homeText(false);
   const el=$("map");if(!features.length)return;const W=el.clientWidth||760,H=Math.round(W*0.5);
   const proj=d3.geoEqualEarth().fitSize([W,H],{type:"Sphere"});const path=d3.geoPath(proj);
   const svg=d3.create("svg").attr("viewBox",`0 0 ${W} ${H}`).attr("width",W).attr("height",H).attr("role","img").attr("aria-label",mapTitle());
@@ -614,7 +669,7 @@ function renderMap(){
   $("map-caption").innerHTML=esc(`${st.lens==="protection"?"Median (q50) of (A_PA/A_t)^z over species, PAs and OECMs of the present roster on 2015 habitat":st.lens==="demography"?"Median (q50) over species with a Red List criterion-A decline; year 2015":"Median (q50) of the joint distribution (1 000 z draws × species bootstrap); hover shows q05–q95 and n"}. Habitat: ${habLabel()}; marker domain: ${domLabel()}${st.taxon!=="ALL"?`; taxon: ${TAXON_LABEL[st.taxon]||st.taxon}`:""}${st.biome!==0?`; biome: ${D.biomeName[st.biome]}`:""}. Sources: ${srcNames.join(" · ")}. Modelled from global datasets. run ${D.manifest.run_id}. Boundaries: Natural Earth de facto.`)+(st.lens==="protection"?` Protected areas: ${PP_CITE_HTML}`:"");
   $("home-h1").textContent=st.lens==="protection"?`How much of each country's remaining genetic diversity is inside protected areas?`:st.lens==="demography"?`What do Red List declines imply for each country's genetic diversity?`:`How much genetic diversity has each country lost since ${st.base}?`;
 }
-function renderWorldStat(){const row=lensRow("WLD",st.year);
+function renderWorldStat(){$("world-prov").hidden=isGbf()&&!!D.gbf;if(isGbf()&&D.gbf)return renderGbfWorld();const row=lensRow("WLD",st.year);
   const pn=pooledN();const pooled=isR1()?"Five first-run countries pooled":pn!=null?cap(`${CORE.countriesWord(pn)} countries pooled`):"Countries pooled";$("world-k").textContent=st.lens==="protection"?pooled+" · secured":pooled;
   if(!row){$("world-val").textContent="—";$("world-int").textContent="no WLD row at these keys";$("world-cov").textContent="";return}
   if(row.below_floor){$("world-val").textContent="—";$("world-int").textContent=floorMsg(row)}
@@ -634,12 +689,12 @@ async function renderCountry(){const iso=st.sel;const c=byIso.get(iso);const nam
   $("c-base-lab").textContent=st.base;
   habSwitch(iso);
   $("c-habnote").hidden=true;$("c-habnote").textContent="";$("c-remnant").hidden=true;$("c-remnant").textContent="";$("c-residue").hidden=true;$("c-residue").textContent="";$("c-luh2").textContent=CORE.luh2Line(luh2Of(iso));{const lf=luh2Of(iso);if(CORE.isPre1850(lf))$("c-luh2").innerHTML=esc(CORE.luh2Line(lf))+' <span class="hbadge">conversion before 1850</span> '+esc(CORE.pre1850Text(lf))}
-  if(!RUN.includes(iso)){$("c-h1").textContent=`${name}: no estimate in this run`;$("c-lede").innerHTML=`${isR1()?"The first run":"The run"} covers ${RUN.length<=5?D.manifest.scope.countries.map(x=>esc(x.name)).join(", "):`${fmtN(RUN.length)} countries`}. No species rows were computed for ${esc(name)}; the page keeps its place and will fill when a later run${isR1()?" (r2 widens the species set)":""} includes it. Nothing here is a placeholder value.`;$("c-panels").hidden=true;return}
+  if(!RUN.includes(iso)){$("gbf-card").hidden=true;$("c-h1").textContent=`${name}: no estimate in this run`;$("c-lede").innerHTML=`${isR1()?"The first run":"The run"} covers ${RUN.length<=5?D.manifest.scope.countries.map(x=>esc(x.name)).join(", "):`${fmtN(RUN.length)} countries`}. No species rows were computed for ${esc(name)}; the page keeps its place and will fill when a later run${isR1()?" (r2 widens the species set)":""} includes it. Nothing here is a placeholder value.`;$("c-panels").hidden=true;return}
   $("c-panels").hidden=false;$("c-h1").textContent=`${name} — loading rows…`;$("c-lede").textContent="";
   let spErr=null;
   try{await Promise.all([ensureShards(iso),ensureSpecies(iso).then(()=>ensureSpeciesShard(iso,spSelKeys())).catch(e=>{spErr=e})])}
   catch(e){$("c-h1").textContent=name;$("c-lede").innerHTML=shardNote(e);$("c-panels").hidden=true;return}
-  spState.err=spErr;
+  spState.err=spErr;renderGbfCard(iso);
   const row=lensRow(iso,2015);const k=biomesPresent(iso).length;const nb=!row&&!rowsCover(iso,lensKeys(2015));
   /* no area estimate at the default keys and none at this selection: the sentence, and the demography rows if there are any */
   const nrt=!row&&!nb?noRowText(iso):"",noArea=!!nrt;
@@ -1060,6 +1115,8 @@ async function boot(){
   index.forEach(c=>{byIso.set(c.iso3,c);isoByM49.set(c.m49,c.iso3);byName.set(c.name_en.toLowerCase(),c)});
   features=topojson.feature(topo,topo.objects.countries).features;
   const dl=$("countries"),dr=$("countries-run");index.slice().sort((a,b)=>a.name_en.localeCompare(b.name_en)).forEach(c=>{const o=document.createElement("option");o.value=c.name_en;o.label=RUN.includes(c.iso3)?c.name_en+" — in this run":c.name_en+" — no estimate in this run";dl.appendChild(o);if(RUN.includes(c.iso3)){const o2=document.createElement("option");o2.value=c.name_en;dr.appendChild(o2)}});
+  D.gbf=await loadJSON("gbf/gbf_indicators.json").catch(()=>null);
+  if(D.gbf)document.querySelectorAll('#s-lens option[value^="gbf_"]').forEach(o=>{o.hidden=false});else if(isGbf())st.lens="area";
   renderBanner();initSelectors();syncYear();
   $("open-country").addEventListener("click",()=>{location.hash=viewLink("country")});
   $("find").addEventListener("change",e=>{const c=byName.get(e.target.value.trim().toLowerCase());if(c){st.sel=c.iso3;location.hash=viewLink("country")}});
