@@ -3,7 +3,7 @@
 The report page of the *Scientists Warning on Genetic Diversity Loss* working group:
 a model-based estimate, for every country, of how much genetic diversity the mapped
 plants, mammals, amphibians and reptiles have lost since 1850 as their primary habitat
-was converted. Live page: <https://genetic-diversity-scientists-warning.github.io/report/>
+was converted. Live page: <https://genetic-diversity-report.github.io/>
 (part of <https://genetic-diversity-scientists-warning.github.io/>).
 
 Every value is a model-based estimate. It is modelled from global datasets, not national data, and has not been validated by any Party.

@@ -5,7 +5,7 @@ the Creative Commons Attribution-NonCommercial 4.0 International licence
 (CC BY-NC 4.0, <https://creativecommons.org/licenses/by-nc/4.0/>).
 
 Attribution: "Scientists Warning on Genetic Diversity Loss working group, *Genetic diversity
-loss by country*, run 20261024-r3, <https://genetic-diversity-scientists-warning.github.io/report/>".
+loss by country*, run 20261024-r3, <https://genetic-diversity-report.github.io/>".
 
 The non-commercial condition follows from the terms of use of the upstream sources from which
 the values are derived: the IUCN Red List spatial data and assessments, the Living Planet Index
