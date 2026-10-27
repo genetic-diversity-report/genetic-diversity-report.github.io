@@ -27,6 +27,13 @@ The repository contains derived summaries only. No range polygons, no protected-
 and no population time series are redistributed. The sources listed in README.md must be
 credited alongside the attribution above.
 
+The GBF-indicator rows (`data/gbf/gbf_indicators.json`, the "GBF indicator" lenses of the page) are
+country aggregates (means, bootstrap bands and species counts) of the nine-country pilot assessments
+of Mastretta-Yanes et al. (2024), Ecology Letters 27:e14461, <https://doi.org/10.1111/ele.14461>,
+computed from the species-level indicator values of that assessment, which are public under CC0
+(Dryad, <https://doi.org/10.5061/dryad.bk3j9kdkm>). No per-record values, assessor names or contact
+details are redistributed. These are observed indicator assessments, not outputs of this report's model.
+
 ## Citations and obligations
 
 Red List: IUCN (2025). The IUCN Red List of Threatened Species. Version 2025-2.

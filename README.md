@@ -1,5 +1,9 @@
 # Genetic diversity loss by country
 
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.23679299.svg)](https://doi.org/10.5281/zenodo.23679299)
+
+Cite as: Expósito-Alonso, M. (2026). Genetic diversity loss by country, v0.0.1 (alpha). Zenodo. https://doi.org/10.5281/zenodo.23679299 (this DOI always resolves to the latest version).
+
 A report by Moisés Expósito-Alonso (University of California Berkeley; Innovative Genomics
 Institute; Howard Hughes Medical Institute): a model-based estimate, for every country, of how much genetic diversity the mapped
 plants, mammals, amphibians and reptiles have lost since 1850 as their primary habitat
@@ -41,6 +45,7 @@ covers exponent uncertainty and species sampling only.
 | `data/country_protection_area.json` | protected-area shares per country and biome, from the public WDPA and WD-OECM |
 | `dashboard.html` | a single-file offline copy of the page with the same data (38 MB) |
 | `data/redlist/<ISO3>.json` | the Red List breakdown of each country's time series (categories with at least 5 species; listed in `bundle_manifest.json` under `redlist_files`) |
+| `data/gbf/gbf_indicators.json` | country aggregates of the nine-country GBF genetic-indicator pilot (Mastretta-Yanes et al. 2024; observed assessments, not model output; the page's "GBF indicator" lenses; listed in `bundle_manifest.json` under `gbf_files`) |
 | `assets/` | figure files of the letter (CC BY-NC 4.0 with the data, see `DATA_LICENSE.md`) |
 
 Numbers are produced by the author's pipeline (`cop17-2026/`, to be published separately); this
