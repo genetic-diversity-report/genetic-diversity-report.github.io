@@ -197,7 +197,7 @@ h1,h2,h3,.brand,.big,.card h2,.drawer h3,.methods h2{font-weight:700!important;l
     </div>
     <aside class="card">
       <h2>Find a country</h2>
-      <div class="sel"><label for="find" class="sr">Country</label><input type="text" id="find" list="countries" placeholder="Armenia" autocomplete="off"><datalist id="countries"></datalist></div>
+      <div class="sel"><label for="find" class="sr">Country</label><input type="text" id="find" list="countries" placeholder="United States" autocomplete="off"><datalist id="countries"></datalist></div>
       <div class="stat"><span class="k" id="world-k"></span><span class="big num" id="world-val">—</span><span class="v" id="world-int"></span></div>
       <div class="stat"><span class="k">Coverage</span><span class="v" id="world-cov"></span></div>
       <div class="stat"><span class="k">Before 1850</span><span class="v" id="world-pre1850"></span></div>
@@ -442,7 +442,7 @@ function lossMeanTxt(row){const v=row?row.loss_mean:null;return v!=null&&Math.ab
 const DIFF_SENTENCE="They differ because z is log-normal: loss_point evaluates every species at its median z, loss_mean averages 1 − R^z over the right-skewed z draws (so it is larger), and q50 is the median of the bootstrap-and-draw distribution of that mean (the displayed statistic).";
 
 /* ---------- state ---------- */
-const st={metric:"AC",base:1850,hab:"primary",dom:"wgs",lens:"area",taxon:"ALL",biome:0,unc:true,year:2015,sel:"ARM",cmp:["ARM","ESP","BRA","KEN","USA"],view:"home",autoHab:null,habPinned:null};
+const st={metric:"AC",base:1850,hab:"primary",dom:"wgs",lens:"area",taxon:"ALL",biome:0,unc:true,year:2015,sel:"USA",cmp:["ARM","ESP","BRA","KEN","USA"],view:"home",autoHab:null,habPinned:null};
 const D={shards:{},species:{},spShards:{},series:{},loaded:{},compact:{},defaultByIso:new Map()};
 let RUN=[];           // iso3 with rows in this run
 let features=[],byName=new Map(),isoByM49=new Map(),byIso=new Map();
