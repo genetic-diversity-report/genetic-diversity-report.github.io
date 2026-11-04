@@ -632,7 +632,9 @@ function renderGbfCard(iso){const card=$("gbf-card"),b=gbfOf(iso);if(!b){card.hi
   const ref=areaRow(iso,2015,st.base,{biome_num:0});
   $("gbf-cap").innerHTML=`Mean over species, 95 % band by bootstrap over species where n ≥ 5; species lacking the data for an indicator are left out, not imputed. Groups with fewer than 5 species with data for both indicators are not listed. Beside these, this report's modelled habitat-area estimate for ${esc(byIso.get(iso)?byIso.get(iso).name_en:iso)} (${st.base} → 2015, ${esc(metricName(st.metric))}) is ${ref&&!ref.below_floor?pct(ref.q50):"not available at these settings"}: a different quantity (loss since a baseline, all mapped species) and a different species set. Source: ${esc(D.gbf.source)}.`}
 /* GBF-OBSERVED-END */
-async function renderHome(){if(needShards())await Promise.all([...RUN.filter(i=>!isCompact(i)),"WLD"].map(ensureShards));renderMap();renderWorldStat()}
+function setHomeTitles(){$("home-h1").textContent=st.lens==="protection"?`How much of each country's remaining genetic diversity is inside protected areas?`:st.lens==="demography"?`What do Red List declines imply for each country's genetic diversity?`:`How much genetic diversity has each country lost since ${st.base}?`;$("map-title").textContent=mapTitle()}
+/* titles first: the shard download below can take seconds, and the old headline (e.g. a 1850 baseline) must not sit there while it runs */
+async function renderHome(){setHomeTitles();if(needShards()){const m=[$("map"),$("world-val").parentNode.parentNode];m.forEach(e=>e&&(e.style.opacity=".45"));try{await Promise.all([...RUN.filter(i=>!isCompact(i)),"WLD"].map(ensureShards))}finally{m.forEach(e=>e&&(e.style.opacity=""))}}renderMap();renderWorldStat()}
 function renderMap(){
   if(isGbf()&&D.gbf)return renderGbfMap();
   if(HOME_TXT["home-lede"]!=null)homeText(false);
@@ -681,7 +683,7 @@ function renderMap(){
   const srcIds=new Set();RUN.forEach(iso=>{const r=lensRow(iso,st.year,"default");if(r&&r.source_id)r.source_id.split(";").forEach(s=>srcIds.add(s))});
   const srcNames=[...srcIds].map(s=>(D.provBy[s]||{}).version||s);
   $("map-caption").innerHTML=esc(`${st.lens==="protection"?"Median (q50) of (A_PA/A_t)^z over species, PAs and OECMs of the present roster on 2015 habitat":st.lens==="demography"?"Median (q50) over species with a Red List criterion-A decline; year 2015":"Median (q50) of the joint distribution (1 000 z draws × species bootstrap); hover shows q05–q95 and n"}. Habitat: ${habLabel()}; marker domain: ${domLabel()}${st.taxon!=="ALL"?`; taxon: ${TAXON_LABEL[st.taxon]||st.taxon}`:""}${st.biome!==0?`; biome: ${D.biomeName[st.biome]}`:""}. Sources: ${srcNames.join(" · ")}. Modelled from global datasets. run ${D.manifest.run_id}. Boundaries: Natural Earth de facto.`)+(st.lens==="protection"?` Protected areas: ${PP_CITE_HTML}`:"");
-  $("home-h1").textContent=st.lens==="protection"?`How much of each country's remaining genetic diversity is inside protected areas?`:st.lens==="demography"?`What do Red List declines imply for each country's genetic diversity?`:`How much genetic diversity has each country lost since ${st.base}?`;
+  setHomeTitles();
 }
 function renderWorldStat(){$("world-prov").hidden=isGbf()&&!!D.gbf;if(isGbf()&&D.gbf)return renderGbfWorld();const row=lensRow("WLD",st.year);
   const pn=pooledN();const pooled=isR1()?"Five first-run countries pooled":pn!=null?cap(`${CORE.countriesWord(pn)} countries pooled`):"Countries pooled";$("world-k").textContent=st.lens==="protection"?pooled+" · secured":pooled;
