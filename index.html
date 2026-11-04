@@ -14,6 +14,7 @@
   --ramp-1:#f1ece2; --ramp-2:#ddd2c4; --ramp-3:#c4b2a4; --ramp-4:#a68f86; --ramp-5:#85696a; --ramp-6:#633f50; --ramp-7:#3d1f33;
   --div-neg:#1a476f; --div-mid:#e8dcc4; --div-pos:#b33951;
   --cat-1:#1a476f; --cat-2:#c49a2c; --cat-3:#6d3b47; --cat-4:#6e8e84; --cat-5:#7a7d85;
+  --cmp-1:#1f6fb2; --cmp-2:#d97a00; --cmp-3:#c2365f; --cmp-4:#1f9a6b; --cmp-5:#7048c2;
   --band:rgba(42,38,34,.10); --hatch:#8a837a; --banner:#e9eef2; --banner-ink:#1f3a4d;
   --serif:"Newsreader",Georgia,"Times New Roman",serif; --sans:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif; --mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
 }
@@ -23,6 +24,7 @@
   --ramp-1:#3a332e; --ramp-2:#54463f; --ramp-3:#6f5a57; --ramp-4:#8b6f74; --ramp-5:#a98692; --ramp-6:#c7a2b2; --ramp-7:#e4c3d4;
   --div-neg:#7fa6d0; --div-mid:#4a4238; --div-pos:#d77d94;
   --cat-1:#8db4e2; --cat-2:#e0bf63; --cat-3:#b86f8a; --cat-4:#8fd3b4; --cat-5:#8b8f99;
+  --cmp-1:#5ab4ec; --cmp-2:#f5b94a; --cmp-3:#f0759b; --cmp-4:#5fd6a0; --cmp-5:#b196f5;
   --band:rgba(236,230,220,.12); --hatch:#8f877c; --banner:#1d2a33; --banner-ink:#cfe0ea; color-scheme:dark } }
 :root[data-theme="dark"]{
   --paper:#1f1b18; --paper-2:#2a2522; --card:#272220; --ink:#ece6dc; --ink-2:#bfb7ab; --ink-faint:#9c9488;
@@ -30,6 +32,7 @@
   --ramp-1:#3a332e; --ramp-2:#54463f; --ramp-3:#6f5a57; --ramp-4:#8b6f74; --ramp-5:#a98692; --ramp-6:#c7a2b2; --ramp-7:#e4c3d4;
   --div-neg:#7fa6d0; --div-mid:#4a4238; --div-pos:#d77d94;
   --cat-1:#8db4e2; --cat-2:#e0bf63; --cat-3:#b86f8a; --cat-4:#8fd3b4; --cat-5:#8b8f99;
+  --cmp-1:#5ab4ec; --cmp-2:#f5b94a; --cmp-3:#f0759b; --cmp-4:#5fd6a0; --cmp-5:#b196f5;
   --band:rgba(236,230,220,.12); --hatch:#8f877c; --banner:#1d2a33; --banner-ink:#cfe0ea; color-scheme:dark }
 
 *{box-sizing:border-box}
@@ -334,6 +337,7 @@ const CORE=(()=>{
   function nSentence(row){if(!row)return "";const pooled=row.iso3==="WLD";return `${fmtN(row.n_species)} species${pooled?" × country pairs":""} with range data in this run`}
   function ownZ(row){if(!row||row.n_own_z==null)return "";const pooled=row.iso3==="WLD";return `${fmtN(row.n_own_z)}${pooled?" pairs":""} with ${row.n_own_z===1?"its":"their"} own exponent`}
   function confRider(row){if(!row||!row.confidence)return "";return row.confidence==="low"?"confidence low — first indication only":`confidence ${row.confidence}`}
+  function lowRider(row){return row&&row.confidence==="low"?"confidence low — first indication only; ":""}
   function floorMsg(row){return `${fmtN(row.n_species)} species — below the 5-species floor; no estimate shown`}
   /* the 10-headline string used by tests/headline_strings.js and by the country page lede */
   function headlineStat(row){if(!row)return "no row";if(row.below_floor)return floorMsg(row);
@@ -345,8 +349,8 @@ const CORE=(()=>{
     const DEM={demography_iucn:"Red List criterion-A declines",demography_lpi:"LPI population trends in the country",demography_pm:"the Mastretta-Yanes 2024 pilot population counts"};
     if(DEM[row.lens])return `${name}: an estimated ${pctLoss(row.q50)} of ${m} lost, inferred from population decline (${DEM[row.lens]}; ${nSentence(row)}; ${confRider(row)}), shown beside the habitat-area lens, never summed`;
     /* a negative value is a gain (natural habitat that regrew): unsigned number, "gained", and the allele caveat */
-    if(row.q50<0)return `${name} has gained an estimated ${pctLoss(row.q50)} of ${m} since ${base} (${intervalLoss(row)}; ${nSentence(row)}; ${confRider(row)}; regrown land does not restore lost alleles)`;
-    return `${name} has lost an estimated ${pctLoss(row.q50)} of ${m} since ${base} (${intervalLoss(row)}; ${nSentence(row)}; ${confRider(row)}; from habitat loss alone)`}
+    if(row.q50<0)return `${name} has gained an estimated ${pctLoss(row.q50)} of ${m} since ${base} (${lowRider(row)}regrown land does not restore lost alleles)`;
+    return `${name} has lost an estimated ${pctLoss(row.q50)} of ${m} since ${base} (${lowRider(row)}from habitat loss alone)`}
   /* prov_id reconstruction (bundle_manifest.prov_id_rule, asserted at build time) */
   function provRule(rule){const head=rule.split("  ")[0].trim();const parts=head.split(":");return {table:parts[0],run_id:parts[1],keys:parts[2].split("|")}}
   function provId(row,rule){const r=typeof rule==="string"?provRule(rule):rule;return `${r.table}:${r.run_id}:${r.keys.map(k=>row[k]==null?"NA":String(row[k])).join("|")}`}
@@ -412,11 +416,12 @@ const CORE=(()=>{
   function runSuffix(runId){const m=/-(r\d+)$/.exec(String(runId||""));return m?m[1]:""}
   function countriesWord(n){return n===5?"five":fmtN(n)}
   function runScopeSentence(s,num){const n=num||(x=>x);return `every plant, mammal, amphibian and reptile species with a range map that reaches the ${countriesWord((s.countries||[]).length)} countries (${n(fmtN(s.n_species_range_in_countries??s.n_species_in_countries))} species, ${n(fmtN(s.n_species_country_pairs_range))} species × country pairs; birds absent; no range map, no estimate); LUH2 ends ${s.luh2_last_year}; provisional — quote with the run id.`}
-  return {NB,MINUS,decodeTable,match,one,pct,pctPlain,pctLoss,fmtN,fmtNum,metricName,fmtVal,interval,intervalLoss,tight,nOfN,nOfNShort,nSentence,ownZ,confRider,floorMsg,headlineStat,headlineSentence,provRule,provId,yearsFor,subst,speciesFormula,zBand,shardMatch,speciesShard,decodeSpeciesShard,speciesProvKeys,runSuffix,runScopeSentence,seriesValue,decodeSeries,covers,NOT_BUNDLED,countriesWord,NO_AREA,NO_PRIMARY,NATURAL_SHOWN,REMNANT,RESIDUE,WDPA_GAP,luh2Text,luh2Line,isRemnant,isResidue,isPre1850,pre1850Text};
+  return {NB,MINUS,decodeTable,match,one,pct,pctPlain,pctLoss,fmtN,fmtNum,metricName,fmtVal,interval,intervalLoss,tight,nOfN,nOfNShort,nSentence,ownZ,confRider,lowRider,floorMsg,headlineStat,headlineSentence,provRule,provId,yearsFor,subst,speciesFormula,zBand,shardMatch,speciesShard,decodeSpeciesShard,speciesProvKeys,runSuffix,runScopeSentence,seriesValue,decodeSeries,covers,NOT_BUNDLED,countriesWord,NO_AREA,NO_PRIMARY,NATURAL_SHOWN,REMNANT,RESIDUE,WDPA_GAP,luh2Text,luh2Line,isRemnant,isResidue,isPre1850,pre1850Text};
 })();
 /* @@core-end */
 
-const {NB,MINUS,decodeTable,match,one,pct,pctPlain,pctLoss,fmtN,fmtNum,metricName,fmtVal,interval,intervalLoss,tight,nOfN,nOfNShort,nSentence,ownZ,confRider,floorMsg,headlineStat,headlineSentence,provId,yearsFor,speciesFormula,zBand}=CORE;
+const {NB,MINUS,decodeTable,match,one,pct,pctPlain,pctLoss,fmtN,fmtNum,metricName,fmtVal,interval,intervalLoss,tight,nOfN,nOfNShort,nSentence,ownZ,confRider,lowRider,floorMsg,headlineStat,headlineSentence,provId,yearsFor,speciesFormula,zBand}=CORE;
+const CMP=["var(--cmp-1)","var(--cmp-2)","var(--cmp-3)","var(--cmp-4)","var(--cmp-5)"];
 const CAT=["var(--cat-1)","var(--cat-2)","var(--cat-3)","var(--cat-4)","var(--cat-5)"];
 const ramp=["var(--ramp-1)","var(--ramp-2)","var(--ramp-3)","var(--ramp-4)","var(--ramp-5)","var(--ramp-6)","var(--ramp-7)"];
 const classes=[0,.02,.05,.10,.15,.25,.40];
@@ -733,7 +738,7 @@ async function renderCountry(){const iso=st.sel;const c=byIso.get(iso);const nam
   const src=new Set();rowsFor(iso).forEach(r=>{if(r.source_id)r.source_id.split(";").forEach(s=>src.add(s))});
   $("c-sources").textContent=`6 · Sources in this country's rows: ${[...src].map(s=>(D.provBy[s]||{}).version||s).join(" · ")}. Boundaries: Natural Earth de facto; they do not imply endorsement or acceptance by the authors or the CBD. methods v${D.manifest.methods_version} · run ${D.manifest.run_id}.`;
 }
-function renderTS(iso){const el=$("ts");const W=el.clientWidth||700,H=300,m={t:16,r:160,b:34,l:44};const t0=st.base;
+function renderTS(iso){const el=$("ts");const W=el.clientWidth||700,H=Math.max(360,Math.min(480,Math.round(W*.42))),m={t:16,r:160,b:34,l:44};const t0=st.base;
   const ys=yearsFor(rowsFor(iso).filter(r=>r.taxon_group===st.taxon&&r.biome_num===st.biome),t0);
   if(isCompact(iso)&&!yearsPresent().every(y=>rowsCover(iso,K({lens:"area",baseline_year:t0,year:y})))){el.innerHTML=notBundledP();$("ts-cap").textContent="";return}
   if(!ys.length){el.innerHTML=`<p class="floor">No area-lens rows at these keys.</p>`;$("ts-cap").textContent="";return}
@@ -782,7 +787,7 @@ function drawRL(iso,d){const el=$("rl"),tab=$("rl-tab"),capEl=$("rl-cap");const 
   const get=(c,y)=>all.find(r=>r.redlist_category===c&&r.year===y&&!r.below_floor);
   const series=cats.map(c=>({c,pts:ys.map(y=>({t:y,row:get(c,y)})).filter(p=>p.row)}));
   const allS={c:"ALL",pts:ys.map(y=>({t:y,row:all.find(r=>r.redlist_category==="ALL"&&r.year===y)})).filter(p=>p.row)};
-  const W=el.clientWidth||700,H=300,m={t:16,r:176,b:34,l:44};
+  const W=el.clientWidth||700,H=Math.max(360,Math.min(480,Math.round(W*.42))),m={t:16,r:176,b:34,l:44};
   const x=d3.scaleLinear([t0,ys[ys.length-1]],[m.l,W-m.r]);
   let ymin=100;series.concat([allS]).forEach(s=>s.pts.forEach(p=>{const v=100*(1-p.row.q50);if(v<ymin)ymin=v}));
   const y=d3.scaleLinear([Math.floor(Math.min(ymin,99)/10)*10,100],[H-m.b,m.t]);
@@ -928,10 +933,10 @@ function renderSpeciesExpand(iso,r){const cell=$("sp-exp");if(!cell)return;
   <div><div class="formula">${esc(f.join("\n"))}</div><p class="caption">z source: ${zSourceCell(r)}${r.z_source!=="own"?` (${esc(((D.formulaBy.z_prior||{}).variables)||"")})`:""}. Red List: ${esc(r.redlist_category||"—")}; range share in ${esc(nameOf(iso))} ${fmtNum(r.range_share,3)}; full-range ratio R_full ${fmtNum(r.R_full,3)} (sensitivity). <span class="num">${esc(r.prov_id)}</span></p></div></div>`}
 
 /* ---------- render: compare ---------- */
-function renderCompare(){const chips=$("chips");chips.replaceChildren();st.cmp.forEach((iso,i)=>{const s=document.createElement("span");s.className="chip";s.innerHTML=`<i style="background:${CAT[i%5]}"></i>${esc(nameOf(iso))}<button aria-label="Remove ${esc(nameOf(iso))}">✕</button>`;s.querySelector("button").onclick=()=>{st.cmp=st.cmp.filter(x=>x!==iso);renderCompare()};chips.appendChild(s)});
+function renderCompare(){const chips=$("chips");chips.replaceChildren();st.cmp.forEach((iso,i)=>{const s=document.createElement("span");s.className="chip";s.innerHTML=`<i style="background:${CMP[i%5]}"></i>${esc(nameOf(iso))}<button aria-label="Remove ${esc(nameOf(iso))}">✕</button>`;s.querySelector("button").onclick=()=>{st.cmp=st.cmp.filter(x=>x!==iso);renderCompare()};chips.appendChild(s)});
   if(needShards()){Promise.all(RUN.filter(i=>!isCompact(i)&&!D.shards[i]).map(ensureShards)).then(n=>{if(n.length)renderCompare()})}   /* the focus countries: the compare set and the scatter */
-  const el=$("cmp");const W=el.clientWidth||700,H=300,m={t:16,r:170,b:34,l:44};const t0=st.base;const ys=yearsPresent();const x=d3.scaleLinear([t0,ys[ys.length-1]],[m.l,W-m.r]);
-  const ser=st.cmp.map((iso,i)=>({iso,color:CAT[i%5],pts:RUN.includes(iso)?ys.map(t=>({t,row:areaRow(iso,t,t0,null,"default")})).filter(p=>p.row&&!p.row.below_floor):[]})).filter(s=>s.pts.length);
+  const el=$("cmp");const W=el.clientWidth||700,H=Math.max(360,Math.min(480,Math.round(W*.42))),m={t:16,r:170,b:34,l:44};const t0=st.base;const ys=yearsPresent();const x=d3.scaleLinear([t0,ys[ys.length-1]],[m.l,W-m.r]);
+  const ser=st.cmp.map((iso,i)=>({iso,color:CMP[i%5],pts:RUN.includes(iso)?ys.map(t=>({t,row:areaRow(iso,t,t0,null,"default")})).filter(p=>p.row&&!p.row.below_floor):[]})).filter(s=>s.pts.length);
   const bands=st.unc&&ser.length<=3;let ymin=100,ymax=100;ser.forEach(s=>s.pts.forEach(p=>{const v=100*(1-(bands?p.row.q95:p.row.q50));if(v<ymin)ymin=v;const v2=100*(1-(bands?p.row.q05:p.row.q50));if(v2>ymax)ymax=v2}));
   const y=d3.scaleLinear([Math.floor(Math.min(ymin,99)/10)*10,ymax>100?Math.ceil(ymax/10)*10:100],[H-m.b,m.t]);
   const svg=d3.create("svg").attr("viewBox",`0 0 ${W} ${H}`).attr("width",W).attr("height",H).attr("role","img").attr("aria-label","Compared countries, estimated diversity remaining");
@@ -999,7 +1004,7 @@ function renderScatter(){const el=$("cmp-scatter"),leg=$("cmp-sc-legend"),capEl=
   pts.slice().sort((a,b)=>b.n-a.n).forEach(p=>{const inCmp=cmpIdx.has(p.iso),gain=p.y<0,yv=100*p.y,off=yv<yLo;if(off)nOff++;
     const fill=p.res?"var(--card)":gain?"var(--div-neg)":ramp[rampClass(Math.max(0,p.y))];
     const c=svg.append("circle").attr("class","sc-pt pt"+(p.res?" res":"")+(inCmp?" cmp":"")+(off?" off":"")).attr("cx",x(100*p.x)).attr("cy",y(off?yLo:yv)).attr("r",scR(p)).attr("fill",fill)
-      .attr("stroke",inCmp?CAT[cmpIdx.get(p.iso)%5]:p.res?"var(--ink)":"var(--ink-faint)").attr("stroke-width",inCmp?2.5:p.res?1.2:.6).attr("stroke-dasharray",p.res?"1.5 2":null).attr("fill-opacity",p.res?1:.92)
+      .attr("stroke",inCmp?CMP[cmpIdx.get(p.iso)%5]:p.res?"var(--ink)":"var(--ink-faint)").attr("stroke-width",inCmp?2.5:p.res?1.2:.6).attr("stroke-dasharray",p.res?"1.5 2":null).attr("fill-opacity",p.res?1:.92)
       .attr("aria-label",`${nameOf(p.iso)}: ${fmtVal(p.row)} ${tight(p.row)}, ${nSentence(p.row)}; primary land lost ${st.base} → ${st.year}: ${pctPlain(p.x)}`);
     const tipHtml=`<b>${esc(nameOf(p.iso))}</b><br>${fmtVal(p.row)} ${st.unc?tight(p.row):""} ${esc(metricName(st.metric))}${off?" (beyond the axis; drawn at the top edge)":""}<br>${esc(nSentence(p.row))} · ${esc(ownZ(p.row))} · confidence <span class="mono">${p.row.confidence}</span><br>Primary land lost ${st.base} → ${st.year}: ${pctPlain(p.x)} of the ${st.base} primary area${p.rem?" "+remnantBadge:""}${p.res?" "+residueBadge:""}<br><span class="mono">${inCmp?"in the compare set":"click → add to the compare set"}</span>`;c.on("mousemove",ev=>showTip(ev,tipHtml)).attr("tabindex",0).attr("role","img").on("focus",ev=>{const r=ev.target.getBoundingClientRect();showTip({clientX:r.left+r.width/2,clientY:r.top},tipHtml)}).on("blur",()=>hideTip()).on("keydown",ev=>{if(ev.key==="Enter"||ev.key===" "){ev.preventDefault();ev.target.dispatchEvent(new MouseEvent("click",{bubbles:true}))}}).on("mouseleave",hideTip).on("click",()=>{hideTip();addToCompare(p.iso)})});
   const labs=pts.filter(p=>cmpIdx.has(p.iso)).map(p=>({r:scR(p),x:x(100*p.x),y:y(Math.max(yLo,100*p.y)),t:nameOf(p.iso)}));
